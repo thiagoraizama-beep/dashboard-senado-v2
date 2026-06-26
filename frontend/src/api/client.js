@@ -104,6 +104,10 @@ export function deleteUserAccount(id) {
   return api.delete(`/auth/users/${id}`).then((r) => r.data);
 }
 
+export function updateUserRoleAccount(id, payload) {
+  return api.put(`/auth/users/${id}/role`, payload).then((r) => r.data);
+}
+
 export function changeMyPassword(senhaAtual, novaSenha) {
   return api.put("/auth/me/password", { senhaAtual, novaSenha }).then((r) => r.data);
 }

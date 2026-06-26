@@ -1,6 +1,14 @@
 import { Router } from "express";
 import multer from "multer";
-import { login, createUser, listUsers, updateProfile, changePassword, deactivateUser } from "../services/authService.js";
+import {
+  login,
+  createUser,
+  listUsers,
+  updateProfile,
+  updateUserRole,
+  changePassword,
+  deactivateUser,
+} from "../services/authService.js";
 import { requireAuth, requireRole } from "../middleware/auth.js";
 import { uploadToCloudinary } from "../utils/cloudinaryUpload.js";
 
@@ -94,6 +102,18 @@ router.put("/me/password", requireAuth, async (req, res, next) => {
     const result = await changePassword(req.user.id, senhaAtual, novaSenha);
     if (!result.ok) return res.status(400).json({ error: result.error });
     res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.put("/users/:id/role", requireAuth, requireRole("agencia"), async (req, res, next) => {
+  try {
+    const { papel, veiculos } = req.body;
+    if (!papel) return res.status(400).json({ error: "Campo obrigatório: papel" });
+    const updated = await updateUserRole(req.params.id, { papel, veiculos: papel === "veiculo" ? veiculos || [] : [] });
+    if (!updated) return res.status(404).json({ error: "Usuário não encontrado" });
+    res.json(updated);
   } catch (err) {
     next(err);
   }

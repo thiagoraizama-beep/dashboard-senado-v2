@@ -86,6 +86,20 @@ export async function updateProfile(id, { nome, fotoUrl }) {
   return rows[0] ? toPublicUser(rows[0]) : null;
 }
 
+// Agencia pode trocar o papel (e veiculos vinculados, se for o caso) de
+// outro usuario sem precisar excluir e recriar a conta.
+export async function updateUserRole(id, { papel, veiculos }) {
+  const { rows } = await query(
+    `UPDATE users SET
+      papel = COALESCE($2, papel),
+      veiculos = COALESCE($3, veiculos)
+     WHERE id = $1 AND ativo = true
+     RETURNING *`,
+    [id, papel, veiculos]
+  );
+  return rows[0] ? toPublicUser(rows[0]) : null;
+}
+
 // Desativa em vez de excluir de fato, para preservar o historico
 // (criativos/status apontam para o usuario via foreign key).
 export async function deactivateUser(id) {

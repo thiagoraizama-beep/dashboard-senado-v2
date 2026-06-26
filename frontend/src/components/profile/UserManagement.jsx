@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext.jsx";
-import { getUsers, createUserAccount, deleteUserAccount } from "../../api/client.js";
+import { getUsers, createUserAccount, deleteUserAccount, updateUserRoleAccount } from "../../api/client.js";
 import { CREATIVE_VEHICLES } from "../layout/creativeVehicles.js";
 import Avatar from "../common/Avatar.jsx";
 import TrashIcon from "../common/TrashIcon.jsx";
@@ -13,6 +13,7 @@ export default function UserManagement() {
   const [users, setUsers] = useState(null);
   const [formOpen, setFormOpen] = useState(false);
   const [deleting, setDeleting] = useState(null);
+  const [editingRole, setEditingRole] = useState(null);
 
   function load() {
     getUsers().then(setUsers).catch(console.error);
@@ -58,36 +59,67 @@ export default function UserManagement() {
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {users.map((u) => (
-            <div key={u.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <Avatar nome={u.nome} fotoUrl={u.fotoUrl} size={32} />
-              <div style={{ flex: 1 }}>
-                <strong style={{ fontSize: 13 }}>{u.nome}</strong>
-                <p style={{ margin: 0, fontSize: 11, color: "var(--text-secondary)" }}>{u.email}</p>
+            <div key={u.id} style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <Avatar nome={u.nome} fotoUrl={u.fotoUrl} size={32} />
+                <div style={{ flex: 1 }}>
+                  <strong style={{ fontSize: 13 }}>{u.nome}</strong>
+                  <p style={{ margin: 0, fontSize: 11, color: "var(--text-secondary)" }}>{u.email}</p>
+                </div>
+                {u.id === currentUser.id ? (
+                  <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+                    {PAPEL_LABELS[u.papel]}
+                    {u.veiculos?.length > 0 && ` · ${u.veiculos.join(", ")}`}
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => setEditingRole(editingRole?.id === u.id ? null : u)}
+                    style={{
+                      padding: "4px 10px",
+                      borderRadius: 6,
+                      border: "1px solid var(--border)",
+                      background: editingRole?.id === u.id ? "var(--accent-soft)" : "transparent",
+                      color: editingRole?.id === u.id ? "var(--accent)" : "var(--text-secondary)",
+                      fontSize: 12,
+                      cursor: "pointer",
+                    }}
+                  >
+                    {PAPEL_LABELS[u.papel]}
+                    {u.veiculos?.length > 0 && ` · ${u.veiculos.join(", ")}`}
+                  </button>
+                )}
+                {u.id !== currentUser.id && (
+                  <button
+                    onClick={() => setDeleting(u)}
+                    title="Excluir usuário"
+                    aria-label="Excluir usuário"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: 30,
+                      height: 30,
+                      borderRadius: 6,
+                      border: "1px solid var(--border)",
+                      background: "transparent",
+                      color: "var(--danger)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <TrashIcon />
+                  </button>
+                )}
               </div>
-              <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-                {PAPEL_LABELS[u.papel]}
-                {u.veiculos?.length > 0 && ` · ${u.veiculos.join(", ")}`}
-              </span>
-              {u.id !== currentUser.id && (
-                <button
-                  onClick={() => setDeleting(u)}
-                  title="Excluir usuário"
-                  aria-label="Excluir usuário"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    width: 30,
-                    height: 30,
-                    borderRadius: 6,
-                    border: "1px solid var(--border)",
-                    background: "transparent",
-                    color: "var(--danger)",
-                    cursor: "pointer",
+
+              {editingRole?.id === u.id && (
+                <EditRoleForm
+                  user={u}
+                  onSaved={() => {
+                    setEditingRole(null);
+                    load();
                   }}
-                >
-                  <TrashIcon />
-                </button>
+                  onCancel={() => setEditingRole(null)}
+                />
               )}
             </div>
           ))}
@@ -102,6 +134,107 @@ export default function UserManagement() {
           onCancel={() => setDeleting(null)}
         />
       )}
+    </div>
+  );
+}
+
+function EditRoleForm({ user, onSaved, onCancel }) {
+  const [papel, setPapel] = useState(user.papel);
+  const [veiculos, setVeiculos] = useState(user.veiculos || []);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  function toggleVeiculo(v) {
+    setVeiculos((current) => (current.includes(v) ? current.filter((x) => x !== v) : [...current, v]));
+  }
+
+  async function handleSave() {
+    setError("");
+    setSaving(true);
+    try {
+      await updateUserRoleAccount(user.id, { papel, veiculos: papel === "veiculo" ? veiculos : [] });
+      onSaved();
+    } catch (err) {
+      setError(err.response?.data?.error || "Erro ao atualizar papel");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 10,
+        padding: 12,
+        borderRadius: 8,
+        background: "var(--bg)",
+        marginLeft: 42,
+      }}
+    >
+      <div>
+        <label style={{ fontSize: 12, color: "var(--text-secondary)" }}>Papel</label>
+        <select
+          value={papel}
+          onChange={(e) => setPapel(e.target.value)}
+          style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: "1px solid var(--border)" }}
+        >
+          <option value="agencia">Agência</option>
+          <option value="veiculo">Veículo</option>
+          <option value="cliente">Cliente</option>
+        </select>
+      </div>
+
+      {papel === "veiculo" && (
+        <div>
+          <label style={{ fontSize: 12, color: "var(--text-secondary)" }}>Veículos vinculados</label>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 4 }}>
+            {CREATIVE_VEHICLES.map((v) => (
+              <label key={v} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12 }}>
+                <input type="checkbox" checked={veiculos.includes(v)} onChange={() => toggleVeiculo(v)} />
+                {v}
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {error && <p style={{ color: "var(--danger)", fontSize: 13, margin: 0 }}>{error}</p>}
+
+      <div style={{ display: "flex", gap: 8 }}>
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          style={{
+            padding: "8px 16px",
+            borderRadius: 8,
+            border: "none",
+            background: "var(--accent)",
+            color: "#fff",
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: saving ? "default" : "pointer",
+            opacity: saving ? 0.7 : 1,
+          }}
+        >
+          {saving ? "Salvando..." : "Salvar"}
+        </button>
+        <button
+          onClick={onCancel}
+          style={{
+            padding: "8px 16px",
+            borderRadius: 8,
+            border: "1px solid var(--border)",
+            background: "transparent",
+            color: "var(--text-primary)",
+            fontSize: 13,
+            cursor: "pointer",
+          }}
+        >
+          Cancelar
+        </button>
+      </div>
     </div>
   );
 }
