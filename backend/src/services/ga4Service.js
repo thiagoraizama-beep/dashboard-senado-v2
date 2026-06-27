@@ -72,3 +72,41 @@ export async function getSiteMetricsFromGA4(start, end, veiculo, campanha) {
   setCached(cacheKey, result);
   return result;
 }
+
+// Converte "YYYYMMDD" (formato da dimensao "date" do GA4) para "YYYY-MM-DD".
+function toISODate(ga4Date) {
+  return `${ga4Date.slice(0, 4)}-${ga4Date.slice(4, 6)}-${ga4Date.slice(6, 8)}`;
+}
+
+// Sessoes por dia, para o grafico de Metricas. Retorna null quando GA4_PROPERTY_ID
+// nao esta configurado, para o chamador decidir o fallback.
+export async function getDailySessionsFromGA4(start, end, veiculo, campanha) {
+  const propertyId = process.env.GA4_PROPERTY_ID;
+  if (!propertyId) return null;
+
+  const cacheKey = JSON.stringify({ daily: true, start, end, veiculo, campanha });
+  const cached = getCached(cacheKey);
+  if (cached) return cached;
+
+  const analyticsData = getAnalyticsDataClient();
+  const dimensionFilter = buildDimensionFilter(veiculo, campanha);
+
+  const { data } = await analyticsData.properties.runReport({
+    property: `properties/${propertyId}`,
+    requestBody: {
+      dateRanges: [{ startDate: start, endDate: end }],
+      dimensions: [{ name: "date" }],
+      metrics: [{ name: "sessions" }],
+      limit: 1000,
+      ...(dimensionFilter ? { dimensionFilter } : {}),
+    },
+  });
+
+  const byDate = new Map();
+  for (const row of data.rows || []) {
+    byDate.set(toISODate(row.dimensionValues[0].value), Number(row.metricValues[0].value));
+  }
+
+  setCached(cacheKey, byDate);
+  return byDate;
+}

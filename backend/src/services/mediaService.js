@@ -1,4 +1,6 @@
 import { getRealizado } from "./sheetsClient.js";
+import { realizado as mockRealizado } from "./mockData.js";
+import { getDailySessionsFromGA4 } from "./ga4Service.js";
 import { isWithinRange, previousEquivalentRange, defaultCtrRange } from "../utils/dateRange.js";
 import { getCampaignStatus } from "../utils/campaignStatus.js";
 import { getVeiculosRealizadoEquivalentes } from "../utils/vehicleAliases.js";
@@ -93,12 +95,31 @@ export async function getCampaignStatuses() {
 
 const METRICS = ["investimento", "impressoes", "cliques", "visualizacoes", "sessoes"];
 
+// Sessoes diarias nao existem na planilha real (so nos dados mock); vem sempre do GA4,
+// com fallback para o mock quando GA4_PROPERTY_ID nao esta configurado.
+async function getDailySessions(start, end, campanha, veiculo, modeloCompra) {
+  const ga4Daily = await getDailySessionsFromGA4(start, end, veiculo, campanha);
+  if (ga4Daily) return ga4Daily;
+
+  const veiculosPorModelo = await getVeiculosRealizadoPorModelo(modeloCompra);
+  const inRange = filterRows(mockRealizado, campanha, veiculo, veiculosPorModelo).filter((r) =>
+    isWithinRange(r.data, start, end)
+  );
+
+  const byDate = new Map();
+  for (const r of inRange) {
+    byDate.set(r.data, (byDate.get(r.data) || 0) + r.sessoes);
+  }
+  return byDate;
+}
+
 export async function getPerformanceSeries(start, end, metrics, campanha, veiculo, modeloCompra) {
   const rows = await getRealizado();
   const veiculosPorModelo = await getVeiculosRealizadoPorModelo(modeloCompra);
   const porCampanha = filterRows(rows, campanha, veiculo, veiculosPorModelo);
   const inRange = porCampanha.filter((r) => isWithinRange(r.data, start, end));
   const selectedMetrics = metrics?.length ? metrics.filter((m) => METRICS.includes(m)) : METRICS;
+  const sheetMetrics = selectedMetrics.filter((m) => m !== "sessoes");
 
   const byDate = new Map();
   for (const r of inRange) {
@@ -106,8 +127,18 @@ export async function getPerformanceSeries(start, end, metrics, campanha, veicul
       byDate.set(r.data, Object.fromEntries(selectedMetrics.map((m) => [m, 0])));
     }
     const entry = byDate.get(r.data);
-    for (const m of selectedMetrics) {
+    for (const m of sheetMetrics) {
       entry[m] += r[m];
+    }
+  }
+
+  if (selectedMetrics.includes("sessoes")) {
+    const dailySessions = await getDailySessions(start, end, campanha, veiculo, modeloCompra);
+    for (const [data, sessoes] of dailySessions) {
+      if (!byDate.has(data)) {
+        byDate.set(data, Object.fromEntries(selectedMetrics.map((m) => [m, 0])));
+      }
+      byDate.get(data).sessoes = sessoes;
     }
   }
 
