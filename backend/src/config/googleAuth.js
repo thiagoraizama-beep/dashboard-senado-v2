@@ -17,6 +17,7 @@ export function getGoogleAuth() {
   authClient = new google.auth.JWT(email, null, key, [
     "https://www.googleapis.com/auth/spreadsheets.readonly",
     "https://www.googleapis.com/auth/drive.readonly",
+    "https://www.googleapis.com/auth/analytics.readonly",
   ]);
   return authClient;
 }

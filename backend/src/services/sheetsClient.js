@@ -163,9 +163,3 @@ export async function getRealizadoDetalhado() {
   setCached(cacheKey, data);
   return data;
 }
-
-export async function getSiteMetrics() {
-  // TODO: sessoes/tempo medio/custo por sessao ainda nao existem na planilha real
-  // (vem de Analytics ou outra fonte a definir). Usando mock por enquanto.
-  return mockRealizado;
-}
