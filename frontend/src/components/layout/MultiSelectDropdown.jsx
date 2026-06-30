@@ -27,16 +27,35 @@ export default function MultiSelectDropdown({
   compact = false,
 }) {
   const [open, setOpen] = useState(false);
+  const [menuRect, setMenuRect] = useState(null);
   const containerRef = useRef(null);
+  const menuRef = useRef(null);
   const onImage = variant === "onImage";
 
   useEffect(() => {
     function handleClickOutside(e) {
-      if (containerRef.current && !containerRef.current.contains(e.target)) setOpen(false);
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target) &&
+        menuRef.current &&
+        !menuRef.current.contains(e.target)
+      ) {
+        setOpen(false);
+      }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  function handleToggleOpen() {
+    if (!open && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      const width = Math.max(rect.width, 180);
+      const left = Math.min(rect.left, window.innerWidth - width - 12);
+      setMenuRect({ top: rect.bottom + 6, left: Math.max(8, left), width });
+    }
+    setOpen((o) => !o);
+  }
 
   const selectedValues = multi ? value || [] : value ? [value] : [];
 
@@ -72,7 +91,7 @@ export default function MultiSelectDropdown({
     <div ref={containerRef} style={{ position: "relative" }}>
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={handleToggleOpen}
         style={{
           display: "flex",
           alignItems: "center",
@@ -101,21 +120,22 @@ export default function MultiSelectDropdown({
         <ChevronDownIcon color={onImage ? "#fff" : "var(--text-secondary)"} />
       </button>
 
-      {open && (
+      {open && menuRect && (
         <div
+          ref={menuRef}
           style={{
-            position: "absolute",
-            top: "calc(100% + 6px)",
-            left: 0,
-            right: 0,
-            minWidth: 180,
+            position: "fixed",
+            top: menuRect.top,
+            left: menuRect.left,
+            width: menuRect.width,
+            maxWidth: "calc(100vw - 16px)",
             maxHeight: 260,
             overflowY: "auto",
             background: "var(--card-bg)",
             border: "1px solid var(--border)",
             borderRadius: 12,
             boxShadow: "0 8px 24px rgba(20,33,61,0.15)",
-            zIndex: 50,
+            zIndex: 1000,
             padding: 6,
           }}
         >
