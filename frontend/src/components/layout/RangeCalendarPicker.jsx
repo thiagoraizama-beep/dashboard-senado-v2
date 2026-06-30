@@ -15,11 +15,13 @@ function formatDateBR(iso) {
 
 export default function RangeCalendarPicker({ start, end, onChange }) {
   const [open, setOpen] = useState(false);
+  const [menuPos, setMenuPos] = useState(null);
   const [selected, setSelected] = useState({
     from: start ? new Date(start) : undefined,
     to: end ? new Date(end) : undefined,
   });
   const containerRef = useRef(null);
+  const menuRef = useRef(null);
 
   useEffect(() => {
     setSelected({ from: start ? new Date(start) : undefined, to: end ? new Date(end) : undefined });
@@ -27,11 +29,28 @@ export default function RangeCalendarPicker({ start, end, onChange }) {
 
   useEffect(() => {
     function handleClickOutside(e) {
-      if (containerRef.current && !containerRef.current.contains(e.target)) setOpen(false);
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target) &&
+        menuRef.current &&
+        !menuRef.current.contains(e.target)
+      ) {
+        setOpen(false);
+      }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  function handleToggleOpen() {
+    if (!open && containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      const width = 300;
+      const left = Math.min(rect.left, window.innerWidth - width - 12);
+      setMenuPos({ top: rect.bottom + 6, left: Math.max(8, left) });
+    }
+    setOpen((o) => !o);
+  }
 
   function handleSelect(value) {
     if (value?.from) setSelected({ from: value.from, to: value.to || value.from });
@@ -52,7 +71,7 @@ export default function RangeCalendarPicker({ start, end, onChange }) {
     <div ref={containerRef} style={{ position: "relative" }}>
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={handleToggleOpen}
         style={{
           display: "flex",
           alignItems: "center",
@@ -75,13 +94,14 @@ export default function RangeCalendarPicker({ start, end, onChange }) {
         </svg>
       </button>
 
-      {open && (
+      {open && menuPos && (
         <div
+          ref={menuRef}
           style={{
-            position: "absolute",
-            top: "calc(100% + 6px)",
-            left: 0,
-            zIndex: 50,
+            position: "fixed",
+            top: menuPos.top,
+            left: menuPos.left,
+            zIndex: 1000,
             background: "var(--card-bg)",
             border: "1px solid var(--border)",
             borderRadius: 12,

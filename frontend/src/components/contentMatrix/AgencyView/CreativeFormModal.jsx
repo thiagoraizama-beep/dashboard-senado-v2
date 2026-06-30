@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { CREATIVE_VEHICLES } from "../../layout/creativeVehicles.js";
 import { createMatrixCreative, updateMatrixCreative, getRegisteredVehicles } from "../../../api/client.js";
+import MultiSelectDropdown from "../../layout/MultiSelectDropdown.jsx";
+import RangeCalendarPicker from "../../layout/RangeCalendarPicker.jsx";
 
 export default function CreativeFormModal({ creative, onClose, onSaved }) {
   const isEdit = Boolean(creative);
@@ -128,17 +130,12 @@ export default function CreativeFormModal({ creative, onClose, onSaved }) {
 
         <div>
           <label style={{ fontSize: 12, color: "var(--text-secondary)" }}>Veículo</label>
-          <select
+          <MultiSelectDropdown
             value={veiculo}
-            onChange={(e) => setVeiculo(e.target.value)}
-            style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: "1px solid var(--border)" }}
-          >
-            {veiculoOptions.map((v) => (
-              <option key={v} value={v}>
-                {v}
-              </option>
-            ))}
-          </select>
+            onChange={(v) => v && setVeiculo(v)}
+            options={veiculoOptions}
+            placeholder="Selecione o veículo"
+          />
         </div>
 
         <div>
@@ -172,25 +169,16 @@ export default function CreativeFormModal({ creative, onClose, onSaved }) {
           />
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          <div>
-            <label style={{ fontSize: 12, color: "var(--text-secondary)" }}>Início da veiculação</label>
-            <input
-              type="date"
-              value={periodoInicio}
-              onChange={(e) => setPeriodoInicio(e.target.value)}
-              style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: "1px solid var(--border)" }}
-            />
-          </div>
-          <div>
-            <label style={{ fontSize: 12, color: "var(--text-secondary)" }}>Fim da veiculação</label>
-            <input
-              type="date"
-              value={periodoFim}
-              onChange={(e) => setPeriodoFim(e.target.value)}
-              style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: "1px solid var(--border)" }}
-            />
-          </div>
+        <div>
+          <label style={{ fontSize: 12, color: "var(--text-secondary)" }}>Período de veiculação</label>
+          <RangeCalendarPicker
+            start={periodoInicio}
+            end={periodoFim}
+            onChange={(start, end) => {
+              setPeriodoInicio(start);
+              setPeriodoFim(end);
+            }}
+          />
         </div>
 
         <div>
