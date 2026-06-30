@@ -21,10 +21,19 @@ export const PAGES = {
 
 export const CREATIVE_ANALYSIS_LABEL = "Análise por Criativo";
 
-const NAV_ITEMS = [
-  { label: PAGES.DASHBOARD, icon: DashboardIcon },
-  { label: PAGES.MIDIA_OFFLINE, icon: BroadcastIcon },
+const ALL_NAV_ITEMS = [
+  { label: PAGES.DASHBOARD, icon: DashboardIcon, tipo: "online" },
+  { label: PAGES.MIDIA_OFFLINE, icon: BroadcastIcon, tipo: "offline" },
 ];
+
+// Veiculos (plataformas) que o usuario tem permissao de ver no submenu de
+// Analise por Criativo, com base nos escopos de campanha vinculados a ele.
+// Agencia/cliente (sem escopos) veem todos.
+function veiculosPermitidos(user) {
+  if (!user?.escopos?.length) return CREATIVE_VEHICLES;
+  const permitidos = new Set(user.escopos.flatMap((e) => e.plataformas || []));
+  return CREATIVE_VEHICLES.filter((v) => permitidos.has(v));
+}
 
 const STORAGE_KEY = "sidebar-collapsed";
 
@@ -38,6 +47,9 @@ export default function Sidebar({ collapsed: collapsedProp, onToggle, activePage
   const matrixActive = activePage === PAGES.MATRIZ_CONTEUDO;
   const matrixLabel = user?.papel === "cliente" ? "Relatório de Criativos" : PAGES.MATRIZ_CONTEUDO;
   const isMobile = useIsMobile();
+  const tiposMidia = user?.tiposMidia || ["online", "offline"];
+  const navItems = ALL_NAV_ITEMS.filter((item) => tiposMidia.includes(item.tipo));
+  const veiculosVisiveis = veiculosPermitidos(user);
   // No mobile a sidebar sempre se comporta como expandida (largura total em drawer),
   // independente do estado de colapso salvo do desktop.
   const collapsed = isMobile ? false : collapsedProp;
@@ -121,7 +133,7 @@ export default function Sidebar({ collapsed: collapsedProp, onToggle, activePage
       </div>
 
       <nav style={{ display: "flex", flexDirection: "column", gap: 4, padding: "20px 12px 12px", flex: 1, overflowY: "auto" }}>
-        {NAV_ITEMS.map((item) => {
+        {navItems.map((item) => {
           const Icon = item.icon;
           const active = item.label === activePage;
           return (
@@ -148,6 +160,7 @@ export default function Sidebar({ collapsed: collapsedProp, onToggle, activePage
           );
         })}
 
+        {veiculosVisiveis.length > 0 && (
         <div
           title={collapsed ? CREATIVE_ANALYSIS_LABEL : undefined}
           onClick={() => setCreativeMenuOpen((o) => !o)}
@@ -174,10 +187,11 @@ export default function Sidebar({ collapsed: collapsedProp, onToggle, activePage
             </span>
           )}
         </div>
+        )}
 
-        {!collapsed && creativeMenuOpen && (
+        {veiculosVisiveis.length > 0 && !collapsed && creativeMenuOpen && (
           <div style={{ display: "flex", flexDirection: "column", gap: 2, paddingLeft: 32 }}>
-            {CREATIVE_VEHICLES.map((veiculo) => {
+            {veiculosVisiveis.map((veiculo) => {
               const active = veiculo === activePage;
               return (
                 <div

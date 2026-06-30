@@ -1,6 +1,7 @@
 import { query } from "../config/database.js";
 import { getCloudinaryClient } from "../config/cloudinary.js";
 import { uploadToCloudinary } from "../utils/cloudinaryUpload.js";
+import { scopeVeiculoFilter, scopeCampanhaFilter } from "../utils/scopeFilter.js";
 
 const STATUSES = [
   "Em veiculação",
@@ -13,16 +14,25 @@ const STATUSES = [
   "Ativo",
 ];
 
-// Veiculos visiveis para o usuario: agencia e cliente veem tudo (null = sem filtro),
-// veiculo so ve a propria lista de veiculos vinculada a conta.
+// Veiculos (plataformas) visiveis para o usuario: agencia e cliente veem tudo
+// (null = sem filtro); papel "veiculo" so ve as plataformas dos seus vinculos de
+// campanha (ex: Go On Ad Group ve Meta/Kwai, nao o nome da propria empresa).
 function veiculosVisiveis(user) {
-  if (user.papel === "veiculo") return user.veiculos || [];
+  if (user.papel === "veiculo") return scopeVeiculoFilter(user, null);
   return null;
 }
 
 export async function listCreatives(user) {
   const veiculos = veiculosVisiveis(user);
   if (veiculos) {
+    const campanhas = scopeCampanhaFilter(user, null);
+    if (campanhas) {
+      const { rows } = await query(
+        "SELECT * FROM creatives WHERE veiculo = ANY($1) AND campanha = ANY($2) ORDER BY criado_em DESC",
+        [veiculos, campanhas]
+      );
+      return rows;
+    }
     const { rows } = await query(
       "SELECT * FROM creatives WHERE veiculo = ANY($1) ORDER BY criado_em DESC",
       [veiculos]
@@ -35,8 +45,16 @@ export async function listCreatives(user) {
 
 // Usado pela Analise por Criativo para vincular a midia cadastrada na Matriz
 // de Conteudo a uma linha de performance da planilha (cruzamento por Ad Name + veiculo).
-export async function findCreativeByAdName(adName, veiculo) {
+// Tenta primeiro com formato, depois sem (para compatibilidade com criativos sem formato).
+export async function findCreativeByAdName(adName, veiculo, formato) {
   if (!adName) return null;
+  if (formato) {
+    const { rows } = await query(
+      "SELECT * FROM creatives WHERE ad_name = $1 AND veiculo = $2 AND formato = $3 ORDER BY criado_em DESC LIMIT 1",
+      [adName, veiculo, formato]
+    );
+    if (rows[0]) return rows[0];
+  }
   const { rows } = await query(
     "SELECT * FROM creatives WHERE ad_name = $1 AND veiculo = $2 ORDER BY criado_em DESC LIMIT 1",
     [adName, veiculo]
@@ -60,6 +78,7 @@ export async function createCreative({
   periodoInicio,
   periodoFim,
   veiculo,
+  formato,
   criadoPor,
 }) {
   const upload = await uploadToCloudinary(file.buffer, file.mimetype, process.env.CLOUDINARY_CREATIVES_FOLDER);
@@ -67,8 +86,8 @@ export async function createCreative({
 
   const { rows } = await query(
     `INSERT INTO creatives
-      (nome, ad_name, campanha, conjunto, descricao, observacoes, periodo_inicio, periodo_fim, veiculo, cloudinary_public_id, cloudinary_url, tipo_midia, criado_por)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      (nome, ad_name, campanha, conjunto, descricao, observacoes, periodo_inicio, periodo_fim, veiculo, formato, cloudinary_public_id, cloudinary_url, tipo_midia, criado_por)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
      RETURNING *`,
     [
       nome,
@@ -80,6 +99,7 @@ export async function createCreative({
       periodoInicio || null,
       periodoFim || null,
       veiculo,
+      formato || null,
       upload.public_id,
       upload.secure_url,
       tipoMidia,
@@ -91,7 +111,7 @@ export async function createCreative({
 
 export async function updateCreative(
   id,
-  { nome, adName, campanha, conjunto, descricao, observacoes, periodoInicio, periodoFim, veiculo }
+  { nome, adName, campanha, conjunto, descricao, observacoes, periodoInicio, periodoFim, veiculo, formato }
 ) {
   const { rows } = await query(
     `UPDATE creatives SET
@@ -104,10 +124,11 @@ export async function updateCreative(
       periodo_inicio = COALESCE($8, periodo_inicio),
       periodo_fim = COALESCE($9, periodo_fim),
       veiculo = COALESCE($10, veiculo),
+      formato = COALESCE($11, formato),
       atualizado_em = now()
      WHERE id = $1
      RETURNING *`,
-    [id, nome, adName, campanha, conjunto, descricao, observacoes, periodoInicio, periodoFim, veiculo]
+    [id, nome, adName, campanha, conjunto, descricao, observacoes, periodoInicio, periodoFim, veiculo, formato || null]
   );
   return rows[0] || null;
 }
@@ -132,10 +153,13 @@ export async function updateStatus(id, novoStatus, user) {
   const creative = await getCreativeById(id);
   if (!creative) return null;
 
-  if (user.papel === "veiculo" && !(user.veiculos || []).includes(creative.veiculo)) {
-    const err = new Error("Você não tem permissão para alterar este criativo");
-    err.statusCode = 403;
-    throw err;
+  if (user.papel === "veiculo") {
+    const plataformasPermitidas = scopeVeiculoFilter(user, null) || [];
+    if (!plataformasPermitidas.includes(creative.veiculo)) {
+      const err = new Error("Você não tem permissão para alterar este criativo");
+      err.statusCode = 403;
+      throw err;
+    }
   }
 
   const { rows } = await query(

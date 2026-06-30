@@ -6,7 +6,7 @@ export async function listVehicles() {
   return rows;
 }
 
-export async function createVehicle({ nome, file }) {
+export async function createVehicle({ nome, tipo, file }) {
   let logoUrl = null;
   let publicId = null;
   if (file) {
@@ -16,13 +16,13 @@ export async function createVehicle({ nome, file }) {
   }
 
   const { rows } = await query(
-    `INSERT INTO vehicles (nome, logo_url) VALUES ($1, $2) RETURNING *`,
-    [nome, logoUrl]
+    `INSERT INTO vehicles (nome, logo_url, tipo) VALUES ($1, $2, $3) RETURNING *`,
+    [nome, logoUrl, tipo || "online"]
   );
   return { ...rows[0], cloudinary_public_id: publicId };
 }
 
-export async function updateVehicle(id, { nome, file }) {
+export async function updateVehicle(id, { nome, tipo, file }) {
   let logoUrl;
   if (file) {
     const upload = await uploadToCloudinary(file.buffer, file.mimetype, "logos-veiculos-senado");
@@ -30,8 +30,12 @@ export async function updateVehicle(id, { nome, file }) {
   }
 
   const { rows } = await query(
-    `UPDATE vehicles SET nome = COALESCE($2, nome), logo_url = COALESCE($3, logo_url) WHERE id = $1 RETURNING *`,
-    [id, nome, logoUrl]
+    `UPDATE vehicles SET
+      nome = COALESCE($2, nome),
+      logo_url = COALESCE($3, logo_url),
+      tipo = COALESCE($4, tipo)
+     WHERE id = $1 RETURNING *`,
+    [id, nome, logoUrl, tipo]
   );
   return rows[0] || null;
 }

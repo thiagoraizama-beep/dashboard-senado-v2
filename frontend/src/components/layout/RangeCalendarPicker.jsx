@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+﻿import { useEffect, useRef, useState } from "react";
 import { DayPicker } from "react-day-picker";
 import { ptBR } from "date-fns/locale";
 import "react-day-picker/dist/style.css";
@@ -42,15 +42,33 @@ export default function RangeCalendarPicker({ start, end, onChange }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  function handleToggleOpen() {
-    if (!open && containerRef.current) {
+  function updateMenuPosition() {
+    if (containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
       const width = 300;
       const left = Math.min(rect.left, window.innerWidth - width - 12);
       setMenuPos({ top: rect.bottom + 6, left: Math.max(8, left) });
     }
+  }
+
+  function handleToggleOpen() {
+    if (!open) updateMenuPosition();
     setOpen((o) => !o);
   }
+
+  // Mantem o menu colado no botao enquanto a pagina rola ou a janela muda de tamanho.
+  useEffect(() => {
+    if (!open) return;
+    function handleScrollOrResize() {
+      updateMenuPosition();
+    }
+    window.addEventListener("scroll", handleScrollOrResize, true);
+    window.addEventListener("resize", handleScrollOrResize);
+    return () => {
+      window.removeEventListener("scroll", handleScrollOrResize, true);
+      window.removeEventListener("resize", handleScrollOrResize);
+    };
+  }, [open]);
 
   function handleSelect(value) {
     if (value?.from) setSelected({ from: value.from, to: value.to || value.from });
@@ -101,7 +119,7 @@ export default function RangeCalendarPicker({ start, end, onChange }) {
             position: "fixed",
             top: menuPos.top,
             left: menuPos.left,
-            zIndex: 1000,
+            zIndex: 9999,
             background: "var(--card-bg)",
             border: "1px solid var(--border)",
             borderRadius: 12,
@@ -143,3 +161,4 @@ export default function RangeCalendarPicker({ start, end, onChange }) {
     </div>
   );
 }
+

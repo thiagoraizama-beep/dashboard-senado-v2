@@ -128,6 +128,10 @@ export function updateUserRoleAccount(id, payload) {
   return api.put(`/auth/users/${id}/role`, payload).then((r) => r.data);
 }
 
+export function updateUserAccount(id, payload) {
+  return api.put(`/auth/users/${id}`, payload).then((r) => r.data);
+}
+
 export function changeMyPassword(senhaAtual, novaSenha) {
   return api.put("/auth/me/password", { senhaAtual, novaSenha }).then((r) => r.data);
 }
@@ -162,6 +166,73 @@ export function updateMatrixCreativeStatus(id, status) {
 
 export function getRegisteredVehicles() {
   return api.get("/vehicles").then((r) => r.data);
+}
+
+// Parceiros (empresas veiculadoras)
+export function getParceiros() {
+  return api.get("/parceiros").then((r) => r.data);
+}
+
+export function createParceiro(payload) {
+  return api.post("/parceiros", payload).then((r) => r.data);
+}
+
+export function updateParceiro(id, payload) {
+  return api.put(`/parceiros/${id}`, payload).then((r) => r.data);
+}
+
+export function deleteParceiro(id) {
+  return api.delete(`/parceiros/${id}`).then((r) => r.data);
+}
+
+export function upsertEscopoParaceiro(parceiroId, payload) {
+  return api.put(`/parceiros/${parceiroId}/escopos`, payload).then((r) => r.data);
+}
+
+export function deleteEscopoParceiroById(escopoId) {
+  return api.delete(`/parceiros/escopos/${escopoId}`).then((r) => r.data);
+}
+
+// Campanhas
+export function getCampanhas() {
+  return api.get("/campanhas").then((r) => r.data);
+}
+
+export function createCampanha(nome) {
+  return api.post("/campanhas", { nome }).then((r) => r.data);
+}
+
+export function updateCampanhaNome(id, nome) {
+  return api.put(`/campanhas/${id}`, { nome }).then((r) => r.data);
+}
+
+export function deleteCampanha(id) {
+  return api.delete(`/campanhas/${id}`).then((r) => r.data);
+}
+
+export function upsertCampanhaVeiculo(campanhaId, vehicleId, plataformas, tipoMidia) {
+  return api.put(`/campanhas/${campanhaId}/veiculos`, { vehicleId, plataformas, tipoMidia }).then((r) => r.data);
+}
+
+export function deleteCampanhaVeiculo(vinculoId) {
+  return api.delete(`/campanhas/veiculos/${vinculoId}`).then((r) => r.data);
+}
+
+// Plataformas
+export function getPlataformas() {
+  return api.get("/plataformas").then((r) => r.data);
+}
+
+export function createPlataforma(payload) {
+  return api.post("/plataformas", payload).then((r) => r.data);
+}
+
+export function updatePlataforma(id, payload) {
+  return api.put(`/plataformas/${id}`, payload).then((r) => r.data);
+}
+
+export function deletePlataforma(id) {
+  return api.delete(`/plataformas/${id}`).then((r) => r.data);
 }
 
 export function createVehicle(formData) {

@@ -10,6 +10,9 @@ import creativeAnalysisRoutes from "./routes/creativeAnalysis.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import creativesRoutes from "./routes/creatives.routes.js";
 import vehiclesRoutes from "./routes/vehicles.routes.js";
+import parceirosRoutes from "./routes/parceiros.routes.js";
+import campanhasRoutes from "./routes/campanhas.routes.js";
+import plataformasRoutes from "./routes/plataformas.routes.js";
 import { requireAuth } from "./middleware/auth.js";
 
 export const app = express();
@@ -20,6 +23,9 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/creatives", requireAuth, creativesRoutes);
 app.use("/api/vehicles", requireAuth, vehiclesRoutes);
+app.use("/api/parceiros", requireAuth, parceirosRoutes);
+app.use("/api/campanhas", requireAuth, campanhasRoutes);
+app.use("/api/plataformas", requireAuth, plataformasRoutes);
 
 app.use("/api/media", requireAuth, mediaRoutes);
 app.use("/api/site", requireAuth, siteRoutes);

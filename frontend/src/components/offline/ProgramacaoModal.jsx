@@ -1,5 +1,5 @@
 import { useState } from "react";
-import SearchSelect from "./SearchSelect.jsx";
+import SearchSelect from "../layout/SearchSelect.jsx";
 import { createProgramacao, updateProgramacao } from "../../api/client.js";
 import useIsMobile from "../../hooks/useIsMobile.js";
 

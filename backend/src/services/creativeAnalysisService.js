@@ -1,18 +1,22 @@
 import { getRealizadoDetalhado } from "./sheetsClient.js";
 import { isWithinRange } from "../utils/dateRange.js";
 import { getVeiculosRealizadoEquivalentes } from "../utils/vehicleAliases.js";
-import { findCreativeMedia } from "./cloudinaryImagesService.js";
 import { findCreativeByAdName } from "./creativesService.js";
 
-// Resolve a midia do criativo: primeiro tenta a Matriz de Conteudo (vinculo
-// explicito por Ad Name + veiculo cadastrado pela agencia), e só cai no
-// fuzzy-match do Cloudinary se nao houver nenhum criativo cadastrado na Matriz.
-async function resolveCreativeMedia(adName, nomeCriativo, veiculoOpcao) {
-  const fromMatrix = await findCreativeByAdName(adName, veiculoOpcao);
+// Resolve a midia do criativo:
+// 1. Usa a imagem que vem diretamente da planilha (coluna "Imagem do Criativo"),
+//    que ja foi normalizada pelo sheetsClient (Google Drive -> URL direta).
+// 2. So cai na Matriz de Conteudo (Cloudinary) se a planilha nao tiver imagem.
+// Isso evita dependencia do Cloudinary para criativos que ja tem imagem na planilha.
+async function resolveCreativeMedia(adName, nomeCriativo, veiculoOpcao, imagemDaPlanilha, posicionamento) {
+  if (imagemDaPlanilha) {
+    return { url: imagemDaPlanilha, tipo: "image" };
+  }
+  const fromMatrix = await findCreativeByAdName(adName, veiculoOpcao, posicionamento);
   if (fromMatrix) {
     return { url: fromMatrix.cloudinary_url, tipo: fromMatrix.tipo_midia };
   }
-  return findCreativeMedia(adName, nomeCriativo, veiculoOpcao);
+  return null;
 }
 
 // Veiculos de criativo exibidos no submenu lateral. "Kwai" ainda nao tem aba na
@@ -152,10 +156,10 @@ export async function getCreatives(veiculoOpcao, filters) {
 
   const creatives = await Promise.all(
     Array.from(byAd.values()).map(async (c) => {
-      const media = await resolveCreativeMedia(c.adName, c.nomeCriativo, veiculoOpcao);
+      const media = await resolveCreativeMedia(c.adName, c.nomeCriativo, veiculoOpcao, c.imagemCriativo, c.posicionamento);
       return {
         ...c,
-        imagemCriativo: media?.url || c.imagemCriativo,
+        imagemCriativo: media?.url || null,
         tipoMidia: media?.tipo || "image",
         investimento: Number(c.investimento.toFixed(2)),
         ctr: Number(ctr(c.impressoes, c.cliques).toFixed(2)),

@@ -56,7 +56,7 @@ router.post(
   async (req, res, next) => {
     try {
       if (!req.file) return res.status(400).json({ error: "Arquivo obrigatório" });
-      const { nome, adName, campanha, conjunto, descricao, observacoes, periodoInicio, periodoFim, veiculo } = req.body;
+      const { nome, adName, campanha, conjunto, descricao, observacoes, periodoInicio, periodoFim, veiculo, formato } = req.body;
       if (!nome || !campanha || !veiculo) {
         return res.status(400).json({ error: "Campos obrigatórios: nome, campanha, veiculo" });
       }
@@ -71,6 +71,7 @@ router.post(
         periodoInicio,
         periodoFim,
         veiculo,
+        formato,
         criadoPor: req.user.id,
       });
       res.status(201).json(creative);

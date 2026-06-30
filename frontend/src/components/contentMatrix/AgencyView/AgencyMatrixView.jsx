@@ -31,53 +31,66 @@ function PlusIcon() {
 
 function CreativeMobileCard({ c, onEdit, onDelete, onStatusChange, updating }) {
   return (
-    <div style={{ border: "1px solid var(--border)", borderRadius: 10, padding: 12, display: "flex", flexDirection: "column", gap: 10 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+    <div className="card" style={{ padding: 0, overflow: "hidden" }}>
+      {/* Header com status */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: "var(--card-bg)", borderBottom: "1px solid var(--border)" }}>
+        <span style={{ fontSize: 11, color: "var(--accent)", fontWeight: 600 }}>
+          {c.campanha} · {c.veiculo}
+        </span>
+        <StatusSelect value={c.status} onChange={(status) => onStatusChange(c.id, status)} disabled={updating} />
+      </div>
+
+      {/* Corpo */}
+      <div style={{ padding: "12px 14px", display: "flex", gap: 12 }}>
+        {/* Thumbnail clicável */}
         <CreativePreviewPopup creative={c}>
           {c.tipo_midia === "video" ? (
-            <video src={c.cloudinary_url} style={{ width: 44, height: 44, borderRadius: 8, objectFit: "cover" }} />
+            <video src={c.cloudinary_url} style={{ width: 64, height: 64, borderRadius: 8, objectFit: "cover", flexShrink: 0, display: "block" }} />
           ) : (
-            <img src={c.cloudinary_url} alt={c.nome} style={{ width: 44, height: 44, borderRadius: 8, objectFit: "cover" }} />
+            <img src={c.cloudinary_url} alt={c.nome} style={{ width: 64, height: 64, borderRadius: 8, objectFit: "cover", flexShrink: 0, display: "block" }} />
           )}
         </CreativePreviewPopup>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <strong style={{ fontSize: 13, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+
+        {/* Info */}
+        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 6 }}>
+          <strong style={{ fontSize: 14, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {c.nome}
           </strong>
-          <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>
-            {c.campanha} · {c.veiculo}
-          </span>
+          <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", columnGap: 12, rowGap: 3, fontSize: 12 }}>
+            {c.conjunto && (
+              <>
+                <span style={{ color: "var(--text-secondary)" }}>Conjunto</span>
+                <strong style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.conjunto}</strong>
+              </>
+            )}
+            {c.formato && (
+              <>
+                <span style={{ color: "var(--text-secondary)" }}>Formato</span>
+                <strong style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.formato}</strong>
+              </>
+            )}
+            <span style={{ color: "var(--text-secondary)" }}>Período</span>
+            <strong>{formatPeriodo(c.periodo_inicio, c.periodo_fim)}</strong>
+            <span style={{ color: "var(--text-secondary)" }}>Ad Name</span>
+            <strong style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: c.ad_name ? "var(--text-primary)" : "var(--text-secondary)" }}>
+              {c.ad_name || "não vinculado"}
+            </strong>
+          </div>
         </div>
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 12 }}>
-        <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <span style={{ color: "var(--text-secondary)" }}>Conjunto</span>
-          <strong>{c.conjunto || "-"}</strong>
-        </div>
-        <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <span style={{ color: "var(--text-secondary)" }}>Período</span>
-          <strong>{formatPeriodo(c.periodo_inicio, c.periodo_fim)}</strong>
-        </div>
-        <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <span style={{ color: "var(--text-secondary)" }}>Ad Name</span>
-          <strong>{c.ad_name || "não vinculado"}</strong>
-        </div>
-      </div>
-
-      <StatusSelect value={c.status} onChange={(status) => onStatusChange(c.id, status)} disabled={updating} />
-
-      <div style={{ display: "flex", gap: 8 }}>
-        <DownloadButton creative={c} compact />
+      {/* Ações */}
+      <div style={{ display: "flex", borderTop: "1px solid var(--border)" }}>
         <button
           onClick={() => onEdit(c)}
-          style={{ flex: 1, padding: "6px 0", borderRadius: 6, border: "1px solid var(--border)", background: "transparent", color: "var(--text-primary)", fontSize: 12, cursor: "pointer" }}
+          style={{ flex: 1, padding: "10px 0", border: "none", background: "transparent", color: "var(--accent)", fontSize: 13, fontWeight: 600, cursor: "pointer", borderRight: "1px solid var(--border)" }}
         >
           Editar
         </button>
+        <DownloadButton creative={c} compact />
         <button
           onClick={() => onDelete(c.id)}
-          style={{ flex: 1, padding: "6px 0", borderRadius: 6, border: "1px solid var(--border)", background: "transparent", color: "var(--danger)", fontSize: 12, cursor: "pointer" }}
+          style={{ flex: 1, padding: "10px 0", border: "none", background: "transparent", color: "var(--danger)", fontSize: 13, fontWeight: 600, cursor: "pointer", borderLeft: "1px solid var(--border)" }}
         >
           Excluir
         </button>
@@ -236,6 +249,7 @@ export default function AgencyMatrixView() {
                 <th>Campanha</th>
                 <th>Conjunto</th>
                 <th>Veículo</th>
+                <th>Formato</th>
                 <th>Período</th>
                 <th>Ad Name</th>
                 <th>Status</th>
@@ -258,6 +272,7 @@ export default function AgencyMatrixView() {
                   <td>{c.campanha}</td>
                   <td>{c.conjunto || "-"}</td>
                   <td>{c.veiculo}</td>
+                  <td style={{ fontSize: 12 }}>{c.formato || <span style={{ color: "var(--text-secondary)" }}>—</span>}</td>
                   <td style={{ fontSize: 12 }}>{formatPeriodo(c.periodo_inicio, c.periodo_fim)}</td>
                   <td>
                     {c.ad_name || (

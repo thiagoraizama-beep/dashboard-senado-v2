@@ -23,9 +23,9 @@ router.get("/", async (_req, res, next) => {
 
 router.post("/", requireRole("agencia"), upload.single("logo"), async (req, res, next) => {
   try {
-    const { nome } = req.body;
+    const { nome, tipo } = req.body;
     if (!nome) return res.status(400).json({ error: "Campo obrigatório: nome" });
-    const vehicle = await createVehicle({ nome, file: req.file });
+    const vehicle = await createVehicle({ nome, tipo, file: req.file });
     res.status(201).json(vehicle);
   } catch (err) {
     next(err);
@@ -34,8 +34,8 @@ router.post("/", requireRole("agencia"), upload.single("logo"), async (req, res,
 
 router.put("/:id", requireRole("agencia"), upload.single("logo"), async (req, res, next) => {
   try {
-    const { nome } = req.body;
-    const updated = await updateVehicle(req.params.id, { nome, file: req.file });
+    const { nome, tipo } = req.body;
+    const updated = await updateVehicle(req.params.id, { nome, tipo, file: req.file });
     if (!updated) return res.status(404).json({ error: "Veículo não encontrado" });
     res.json(updated);
   } catch (err) {

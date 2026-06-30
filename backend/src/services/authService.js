@@ -1,19 +1,40 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { query } from "../config/database.js";
+import { getCanaisPermitidos } from "./parceirosService.js";
+import { getEscoposUsuario } from "./campanhasService.js";
+import { tiposMidiaPermitidos } from "../utils/scopeFilter.js";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const TOKEN_TTL = "7d";
 
-function toPublicUser(row) {
-  return {
+function toPublicUser(row, escopos = null) {
+  const base = {
     id: row.id,
     email: row.email,
     nome: row.nome,
     papel: row.papel,
     veiculos: row.veiculos,
+    parceiroId: row.parceiro_id || null,
+    escopos: escopos || null,
     fotoUrl: row.foto_url,
   };
+  base.tiposMidia = tiposMidiaPermitidos(base);
+  return base;
+}
+
+// Resolve os vinculos de campanha+plataformas+tipo_midia do usuario, usados
+// pelo frontend para filtrar dados e montar o menu de navegacao.
+// - papel "parceiro" (sistema antigo de parceiros): busca por parceiro_id
+// - papel "veiculo": busca pelos nomes de veiculo vinculados via campanha_veiculos
+async function resolveEscopos(user) {
+  if (user.papel === "parceiro" && user.parceiro_id) {
+    return getCanaisPermitidos(user.parceiro_id);
+  }
+  if (user.papel === "veiculo" && user.veiculos?.length) {
+    return getEscoposUsuario(user.veiculos);
+  }
+  return null;
 }
 
 export async function login(email, senha) {
@@ -24,25 +45,25 @@ export async function login(email, senha) {
   const valid = await bcrypt.compare(senha, user.password_hash);
   if (!valid) return null;
 
+  const escopos = await resolveEscopos(user);
   const token = jwt.sign({ id: user.id, papel: user.papel }, JWT_SECRET, { expiresIn: TOKEN_TTL });
-  return { token, user: toPublicUser(user) };
+  return { token, user: toPublicUser(user, escopos) };
 }
 
 export async function getUserById(id) {
   const { rows } = await query("SELECT * FROM users WHERE id = $1 AND ativo = true", [id]);
-  return rows[0] ? toPublicUser(rows[0]) : null;
+  if (!rows[0]) return null;
+  const escopos = await resolveEscopos(rows[0]);
+  return toPublicUser(rows[0], escopos);
 }
 
 export function verifyToken(token) {
   return jwt.verify(token, JWT_SECRET);
 }
 
-export async function createUser({ email, senha, nome, papel, veiculos }) {
+export async function createUser({ email, senha, nome, papel, veiculos, parceiroId }) {
   const passwordHash = await bcrypt.hash(senha, 10);
 
-  // Se ja existe uma conta desativada (excluida) com esse email, reativa ela
-  // com os novos dados em vez de tentar inserir um registro duplicado --
-  // o email tem constraint UNIQUE e a exclusao so desativa, nunca remove de fato.
   const { rows: existentes } = await query("SELECT id FROM users WHERE email = $1 AND ativo = false", [email]);
   if (existentes[0]) {
     const { rows } = await query(
@@ -51,22 +72,25 @@ export async function createUser({ email, senha, nome, papel, veiculos }) {
         nome = $3,
         papel = $4,
         veiculos = $5,
+        parceiro_id = $6,
         foto_url = NULL,
         ativo = true
        WHERE id = $1
        RETURNING *`,
-      [existentes[0].id, passwordHash, nome, papel, veiculos || []]
+      [existentes[0].id, passwordHash, nome, papel, veiculos || [], parceiroId || null]
     );
-    return toPublicUser(rows[0]);
+    const escopos = await resolveEscopos(rows[0]);
+    return toPublicUser(rows[0], escopos);
   }
 
   const { rows } = await query(
-    `INSERT INTO users (email, password_hash, nome, papel, veiculos)
-     VALUES ($1, $2, $3, $4, $5)
+    `INSERT INTO users (email, password_hash, nome, papel, veiculos, parceiro_id)
+     VALUES ($1, $2, $3, $4, $5, $6)
      RETURNING *`,
-    [email, passwordHash, nome, papel, veiculos || []]
+    [email, passwordHash, nome, papel, veiculos || [], parceiroId || null]
   );
-  return toPublicUser(rows[0]);
+  const escopos = await resolveEscopos(rows[0]);
+  return toPublicUser(rows[0], escopos);
 }
 
 export async function listUsers() {
@@ -89,16 +113,37 @@ export async function updateProfile(id, { nome, fotoUrl, removerFoto }) {
 
 // Agencia pode trocar o papel (e veiculos vinculados, se for o caso) de
 // outro usuario sem precisar excluir e recriar a conta.
-export async function updateUserRole(id, { papel, veiculos }) {
+// Edição completa de usuario (sem senha) pela agencia.
+export async function updateUser(id, { nome, email, papel, veiculos, parceiroId }) {
+  const { rows } = await query(
+    `UPDATE users SET
+      nome = COALESCE($2, nome),
+      email = COALESCE($3, email),
+      papel = COALESCE($4, papel),
+      veiculos = COALESCE($5, veiculos),
+      parceiro_id = $6
+     WHERE id = $1 AND ativo = true
+     RETURNING *`,
+    [id, nome, email, papel, veiculos, parceiroId || null]
+  );
+  if (!rows[0]) return null;
+  const escopos = await resolveEscopos(rows[0]);
+  return toPublicUser(rows[0], escopos);
+}
+
+export async function updateUserRole(id, { papel, veiculos, parceiroId }) {
   const { rows } = await query(
     `UPDATE users SET
       papel = COALESCE($2, papel),
-      veiculos = COALESCE($3, veiculos)
+      veiculos = COALESCE($3, veiculos),
+      parceiro_id = $4
      WHERE id = $1 AND ativo = true
      RETURNING *`,
-    [id, papel, veiculos]
+    [id, papel, veiculos, parceiroId || null]
   );
-  return rows[0] ? toPublicUser(rows[0]) : null;
+  if (!rows[0]) return null;
+  const escopos = await resolveEscopos(rows[0]);
+  return toPublicUser(rows[0], escopos);
 }
 
 // Desativa em vez de excluir de fato, para preservar o historico

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+﻿import { useEffect, useRef, useState } from "react";
 
 const POPUP_WIDTH = 280;
 
@@ -23,14 +23,32 @@ export default function CreativePreviewPopup({ creative, children }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  function handleToggle() {
-    if (!open && triggerRef.current) {
+  function updateCoords() {
+    if (triggerRef.current) {
       const rect = triggerRef.current.getBoundingClientRect();
       const left = Math.min(rect.left, window.innerWidth - POPUP_WIDTH - 12);
       setCoords({ top: rect.bottom + 8, left: Math.max(8, left) });
     }
+  }
+
+  function handleToggle() {
+    if (!open) updateCoords();
     setOpen((o) => !o);
   }
+
+  // Mantem o popup colado no gatilho enquanto a pagina rola ou a janela muda de tamanho.
+  useEffect(() => {
+    if (!open) return;
+    function handleScrollOrResize() {
+      updateCoords();
+    }
+    window.addEventListener("scroll", handleScrollOrResize, true);
+    window.addEventListener("resize", handleScrollOrResize);
+    return () => {
+      window.removeEventListener("scroll", handleScrollOrResize, true);
+      window.removeEventListener("resize", handleScrollOrResize);
+    };
+  }, [open]);
 
   return (
     <>
@@ -49,7 +67,7 @@ export default function CreativePreviewPopup({ creative, children }) {
             position: "fixed",
             top: coords.top,
             left: coords.left,
-            zIndex: 1000,
+            zIndex: 9999,
             width: POPUP_WIDTH,
             maxWidth: "calc(100vw - 16px)",
             maxHeight: "calc(100vh - 16px)",
@@ -92,3 +110,4 @@ export default function CreativePreviewPopup({ creative, children }) {
     </>
   );
 }
+

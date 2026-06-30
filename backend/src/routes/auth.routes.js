@@ -5,6 +5,7 @@ import {
   createUser,
   listUsers,
   updateProfile,
+  updateUser,
   updateUserRole,
   changePassword,
   deactivateUser,
@@ -61,11 +62,11 @@ router.get("/users", requireAuth, requireRole("agencia"), async (_req, res, next
 
 router.post("/users", requireAuth, requireRole("agencia"), async (req, res, next) => {
   try {
-    const { email, senha, nome, papel, veiculos } = req.body;
+    const { email, senha, nome, papel, veiculos, parceiroId } = req.body;
     if (!email || !senha || !nome || !papel) {
       return res.status(400).json({ error: "Campos obrigatórios: email, senha, nome, papel" });
     }
-    const user = await createUser({ email, senha, nome, papel, veiculos });
+    const user = await createUser({ email, senha, nome, papel, veiculos, parceiroId });
     res.status(201).json(user);
   } catch (err) {
     if (err.code === "23505") {
@@ -103,6 +104,31 @@ router.put("/me/password", requireAuth, async (req, res, next) => {
     if (!result.ok) return res.status(400).json({ error: result.error });
     res.json({ ok: true });
   } catch (err) {
+    next(err);
+  }
+});
+
+// Edicao completa de usuario (sem senha) — nome, email, papel, parceiro_id
+router.put("/users/:id", requireAuth, requireRole("agencia"), async (req, res, next) => {
+  try {
+    if (Number(req.params.id) === req.user.id) {
+      return res.status(400).json({ error: "Use /auth/me para editar seu próprio perfil" });
+    }
+    const { nome, email, papel, veiculos, parceiroId } = req.body;
+    if (!papel) return res.status(400).json({ error: "Campo obrigatório: papel" });
+    const updated = await updateUser(req.params.id, {
+      nome,
+      email,
+      papel,
+      veiculos: papel === "veiculo" ? veiculos || [] : [],
+      parceiroId,
+    });
+    if (!updated) return res.status(404).json({ error: "Usuário não encontrado" });
+    res.json(updated);
+  } catch (err) {
+    if (err.code === "23505") {
+      return res.status(409).json({ error: "Este email já está em uso por outra conta" });
+    }
     next(err);
   }
 });

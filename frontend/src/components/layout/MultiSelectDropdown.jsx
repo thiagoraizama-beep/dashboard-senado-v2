@@ -47,15 +47,33 @@ export default function MultiSelectDropdown({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  function handleToggleOpen() {
-    if (!open && containerRef.current) {
+  function updateMenuPosition() {
+    if (containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
       const width = Math.max(rect.width, 180);
       const left = Math.min(rect.left, window.innerWidth - width - 12);
       setMenuRect({ top: rect.bottom + 6, left: Math.max(8, left), width });
     }
+  }
+
+  function handleToggleOpen() {
+    if (!open) updateMenuPosition();
     setOpen((o) => !o);
   }
+
+  // Mantem o menu colado no botao enquanto a pagina rola ou a janela muda de tamanho.
+  useEffect(() => {
+    if (!open) return;
+    function handleScrollOrResize() {
+      updateMenuPosition();
+    }
+    window.addEventListener("scroll", handleScrollOrResize, true);
+    window.addEventListener("resize", handleScrollOrResize);
+    return () => {
+      window.removeEventListener("scroll", handleScrollOrResize, true);
+      window.removeEventListener("resize", handleScrollOrResize);
+    };
+  }, [open]);
 
   const selectedValues = multi ? value || [] : value ? [value] : [];
 
@@ -135,7 +153,7 @@ export default function MultiSelectDropdown({
             border: "1px solid var(--border)",
             borderRadius: 12,
             boxShadow: "0 8px 24px rgba(20,33,61,0.15)",
-            zIndex: 1000,
+            zIndex: 9999,
             padding: 6,
           }}
         >

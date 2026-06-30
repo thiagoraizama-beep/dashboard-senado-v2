@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { getSummary, getCampaignStatuses, getPerformanceSeries } from "../services/mediaService.js";
 import { parseRange } from "../utils/dateRange.js";
-import { scopeVeiculoFilter } from "../utils/scopeFilter.js";
+import { scopeVeiculoFilter, scopeCampanhaFilter } from "../utils/scopeFilter.js";
 
 const router = Router();
 
@@ -9,15 +9,21 @@ router.get("/summary", async (req, res, next) => {
   try {
     const { start, end, isFiltered, campanha, veiculo, modeloCompra } = parseRange(req.query);
     const veiculoEscopo = scopeVeiculoFilter(req.user, veiculo);
-    res.json(await getSummary(start, end, isFiltered, campanha, veiculoEscopo, modeloCompra));
+    const campanhaEscopo = scopeCampanhaFilter(req.user, campanha);
+    res.json(await getSummary(start, end, isFiltered, campanhaEscopo, veiculoEscopo, modeloCompra));
   } catch (err) {
     next(err);
   }
 });
 
-router.get("/campaign-status", async (_req, res, next) => {
+router.get("/campaign-status", async (req, res, next) => {
   try {
-    res.json(await getCampaignStatuses());
+    const statuses = await getCampaignStatuses();
+    const campanhasPermitidas = scopeCampanhaFilter(req.user, null);
+    const filtrados = campanhasPermitidas
+      ? statuses.filter((s) => campanhasPermitidas.includes(s.campanha))
+      : statuses;
+    res.json(filtrados);
   } catch (err) {
     next(err);
   }
@@ -27,8 +33,9 @@ router.get("/performance", async (req, res, next) => {
   try {
     const { start, end, campanha, veiculo, modeloCompra } = parseRange(req.query);
     const veiculoEscopo = scopeVeiculoFilter(req.user, veiculo);
+    const campanhaEscopo = scopeCampanhaFilter(req.user, campanha);
     const metrics = req.query.metrics ? String(req.query.metrics).split(",") : undefined;
-    res.json(await getPerformanceSeries(start, end, metrics, campanha, veiculoEscopo, modeloCompra));
+    res.json(await getPerformanceSeries(start, end, metrics, campanhaEscopo, veiculoEscopo, modeloCompra));
   } catch (err) {
     next(err);
   }

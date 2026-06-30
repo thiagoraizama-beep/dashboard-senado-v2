@@ -5,7 +5,16 @@ import Avatar from "../components/common/Avatar.jsx";
 import UserManagement from "../components/profile/UserManagement.jsx";
 import ChangePasswordForm from "../components/profile/ChangePasswordForm.jsx";
 import VehicleManagement from "../components/profile/VehicleManagement.jsx";
+import CampaignManagement from "../components/profile/CampaignManagement.jsx";
+import PlatformManagement from "../components/profile/PlatformManagement.jsx";
 import ThemeToggle from "../components/layout/ThemeToggle.jsx";
+
+const TABS_AGENCIA = [
+  { id: "veiculos", label: "Veículos" },
+  { id: "plataformas", label: "Plataformas" },
+  { id: "campanhas", label: "Campanhas" },
+  { id: "usuarios", label: "Usuários" },
+];
 
 export default function ProfilePage() {
   const { user, refreshUser } = useAuth();
@@ -15,6 +24,7 @@ export default function ProfilePage() {
   const [removerFoto, setRemoverFoto] = useState(false);
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [activeTab, setActiveTab] = useState("veiculos");
 
   function handleFileChange(e) {
     const selected = e.target.files?.[0] || null;
@@ -48,100 +58,103 @@ export default function ProfilePage() {
   }
 
   return (
-    <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-        <h2 style={{ margin: 0 }}>Meu Perfil</h2>
+    <div style={{ maxWidth: 900, margin: "0 auto" }}>
+      {/* Header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+        <h2 style={{ margin: 0, fontSize: 22 }}>Meu Perfil</h2>
         <ThemeToggle variant="plain" />
       </div>
 
-      <div className="profile-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "stretch" }}>
-        <form onSubmit={handleSubmit} className="card" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <Avatar nome={nome} fotoUrl={removerFoto ? null : preview || user.fotoUrl} size={64} />
-            <div style={{ display: "flex", gap: 8 }}>
-              <label
-                style={{
-                  display: "inline-block",
-                  padding: "6px 12px",
-                  borderRadius: 8,
-                  border: "1px solid var(--border)",
-                  fontSize: 12,
-                  cursor: "pointer",
-                }}
-              >
-                Trocar foto
-                <input type="file" accept="image/*" onChange={handleFileChange} style={{ display: "none" }} />
-              </label>
-              {!removerFoto && (preview || user.fotoUrl) && (
-                <button
-                  type="button"
-                  onClick={handleRemovePhoto}
-                  style={{
-                    padding: "6px 12px",
-                    borderRadius: 8,
-                    border: "1px solid var(--border)",
-                    background: "transparent",
-                    color: "var(--danger)",
-                    fontSize: 12,
-                    cursor: "pointer",
-                  }}
-                >
-                  Remover foto
-                </button>
+      {/* Card de dados pessoais + senha */}
+      <div className="card" style={{ marginBottom: 24 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 20, paddingBottom: 20, borderBottom: "1px solid var(--border)", marginBottom: 20 }}>
+          <Avatar nome={nome} fotoUrl={removerFoto ? null : preview || user.fotoUrl} size={72} />
+          <div style={{ flex: 1 }}>
+            <strong style={{ fontSize: 18 }}>{user.nome}</strong>
+            <p style={{ margin: "2px 0 0", fontSize: 13, color: "var(--text-secondary)" }}>{user.email}</p>
+            <p style={{ margin: "2px 0 0", fontSize: 12, color: "var(--text-secondary)", textTransform: "capitalize" }}>
+              {user.papel}
+              {user.papel === "veiculo" && user.veiculos?.length > 0 && (
+                <span style={{ marginLeft: 6 }}>
+                  · {user.veiculos.join(", ")}
+                </span>
               )}
+            </p>
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <label style={{ display: "inline-block", padding: "7px 14px", borderRadius: 8, border: "1px solid var(--border)", fontSize: 12, cursor: "pointer", background: "var(--card-bg)" }}>
+              Trocar foto
+              <input type="file" accept="image/*" onChange={handleFileChange} style={{ display: "none" }} />
+            </label>
+            {!removerFoto && (preview || user.fotoUrl) && (
+              <button type="button" onClick={handleRemovePhoto} style={{ padding: "7px 14px", borderRadius: 8, border: "1px solid var(--border)", background: "transparent", color: "var(--danger)", fontSize: 12, cursor: "pointer" }}>
+                Remover foto
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="profile-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, alignItems: "start" }}>
+          {/* Dados */}
+          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <p style={{ margin: "0 0 4px", fontWeight: 600, fontSize: 14, color: "var(--text-secondary)" }}>Dados pessoais</p>
+            <div>
+              <label style={{ fontSize: 12, color: "var(--text-secondary)" }}>Nome</label>
+              <input value={nome} onChange={(e) => setNome(e.target.value)} required style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: "1px solid var(--border)" }} />
             </div>
-          </div>
+            <div>
+              <label style={{ fontSize: 12, color: "var(--text-secondary)" }}>Email</label>
+              <input value={user.email} disabled style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: "1px solid var(--border)", opacity: 0.6 }} />
+            </div>
+            {success && <p style={{ color: "var(--success)", fontSize: 13, margin: 0 }}>Perfil atualizado!</p>}
+            <button type="submit" disabled={saving} style={{ padding: "9px 0", borderRadius: 8, border: "none", background: "var(--accent)", color: "#fff", fontSize: 13, fontWeight: 600, cursor: "pointer", opacity: saving ? 0.7 : 1 }}>
+              {saving ? "Salvando..." : "Salvar alterações"}
+            </button>
+          </form>
 
+          {/* Senha */}
           <div>
-            <label style={{ fontSize: 12, color: "var(--text-secondary)" }}>Nome</label>
-            <input
-              value={nome}
-              onChange={(e) => setNome(e.target.value)}
-              required
-              style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: "1px solid var(--border)" }}
-            />
+            <p style={{ margin: "0 0 14px", fontWeight: 600, fontSize: 14, color: "var(--text-secondary)" }}>Segurança</p>
+            <ChangePasswordForm />
           </div>
-
-          <div>
-            <label style={{ fontSize: 12, color: "var(--text-secondary)" }}>Email</label>
-            <input
-              value={user.email}
-              disabled
-              style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: "1px solid var(--border)", opacity: 0.6 }}
-            />
-          </div>
-
-          {success && <p style={{ color: "var(--success)", fontSize: 13, margin: 0 }}>Perfil atualizado!</p>}
-
-          <button
-            type="submit"
-            disabled={saving}
-            style={{
-              padding: "10px 0",
-              borderRadius: 8,
-              border: "none",
-              background: "var(--accent)",
-              color: "#fff",
-              fontSize: 14,
-              fontWeight: 600,
-              cursor: saving ? "default" : "pointer",
-              opacity: saving ? 0.7 : 1,
-            }}
-          >
-            {saving ? "Salvando..." : "Salvar alterações"}
-          </button>
-        </form>
-
-        <ChangePasswordForm />
+        </div>
       </div>
 
+      {/* Seções da agência em abas */}
       {user.papel === "agencia" && (
-        <div
-          className="profile-grid-2"
-          style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginTop: 20, alignItems: "start" }}
-        >
-          <VehicleManagement />
-          <UserManagement />
+        <div>
+          {/* Tab bar */}
+          <div style={{ display: "flex", gap: 4, marginBottom: 20, borderBottom: "1px solid var(--border)", paddingBottom: 0 }}>
+            {TABS_AGENCIA.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                style={{
+                  padding: "10px 20px",
+                  borderRadius: "8px 8px 0 0",
+                  border: "1px solid var(--border)",
+                  borderBottom: activeTab === tab.id ? "1px solid var(--card-bg)" : "1px solid var(--border)",
+                  background: activeTab === tab.id ? "var(--card-bg)" : "transparent",
+                  color: activeTab === tab.id ? "var(--accent)" : "var(--text-secondary)",
+                  fontWeight: activeTab === tab.id ? 700 : 400,
+                  fontSize: 13,
+                  cursor: "pointer",
+                  position: "relative",
+                  bottom: -1,
+                }}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Conteúdo da aba */}
+          <div>
+            {activeTab === "veiculos" && <VehicleManagement />}
+            {activeTab === "plataformas" && <PlatformManagement />}
+            {activeTab === "campanhas" && <CampaignManagement />}
+            {activeTab === "usuarios" && <UserManagement />}
+          </div>
         </div>
       )}
     </div>
