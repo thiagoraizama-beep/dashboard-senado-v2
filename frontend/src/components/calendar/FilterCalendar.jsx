@@ -8,7 +8,7 @@ function toISODate(date) {
   return date.toISOString().slice(0, 10);
 }
 
-export default function FilterCalendar({ onApply }) {
+export default function FilterCalendar({ onApply, hideApplyButton = false, bare = false }) {
   const { range, setRange } = useDateRange();
   const [selected, setSelected] = useState({
     from: new Date(range.start),
@@ -16,8 +16,11 @@ export default function FilterCalendar({ onApply }) {
   });
 
   function handleSelect(value) {
-    if (value?.from) {
-      setSelected({ from: value.from, to: value.to || value.from });
+    if (!value?.from) return;
+    const next = { from: value.from, to: value.to || value.from };
+    setSelected(next);
+    if (hideApplyButton && next.from && next.to) {
+      setRange({ start: toISODate(next.from), end: toISODate(next.to) });
     }
   }
 
@@ -29,8 +32,8 @@ export default function FilterCalendar({ onApply }) {
   }
 
   return (
-    <div className="card" style={{ fontSize: 13 }}>
-      <p className="card-title">Período</p>
+    <div className={bare ? undefined : "card"} style={{ fontSize: 13 }}>
+      {!bare && <p className="card-title">Período</p>}
       <div className="mini-calendar" style={{ display: "flex", justifyContent: "center" }}>
         <DayPicker
           mode="range"
@@ -41,25 +44,27 @@ export default function FilterCalendar({ onApply }) {
           locale={ptBR}
         />
       </div>
-      <button
-        onClick={handleApply}
-        disabled={!selected?.from || !selected?.to}
-        style={{
-          width: "100%",
-          marginTop: 8,
-          padding: "8px 0",
-          borderRadius: 8,
-          border: "none",
-          background: "var(--accent)",
-          color: "#fff",
-          fontSize: 13,
-          fontWeight: 600,
-          cursor: selected?.from && selected?.to ? "pointer" : "not-allowed",
-          opacity: selected?.from && selected?.to ? 1 : 0.5,
-        }}
-      >
-        Filtrar
-      </button>
+      {!hideApplyButton && (
+        <button
+          onClick={handleApply}
+          disabled={!selected?.from || !selected?.to}
+          style={{
+            width: "100%",
+            marginTop: 8,
+            padding: "8px 0",
+            borderRadius: 8,
+            border: "none",
+            background: "var(--accent)",
+            color: "#fff",
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: selected?.from && selected?.to ? "pointer" : "not-allowed",
+            opacity: selected?.from && selected?.to ? 1 : 0.5,
+          }}
+        >
+          Filtrar
+        </button>
+      )}
     </div>
   );
 }

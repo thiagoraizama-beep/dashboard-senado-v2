@@ -24,6 +24,7 @@ export default function MultiSelectDropdown({
   placeholder = "Todos",
   multi = false,
   variant = "plain",
+  compact = false,
 }) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef(null);
@@ -78,12 +79,12 @@ export default function MultiSelectDropdown({
           justifyContent: "space-between",
           gap: 8,
           width: "100%",
-          padding: onImage ? "8px 14px" : "10px 12px",
+          padding: compact ? "6px 10px" : onImage ? "8px 14px" : "10px 12px",
           borderRadius: onImage ? 999 : 8,
           border: onImage ? "1px solid rgba(255,255,255,0.4)" : "1px solid var(--border)",
           background: onImage ? "rgba(255,255,255,0.08)" : "var(--card-bg)",
           color: onImage ? "#fff" : "var(--text-primary)",
-          fontSize: 13,
+          fontSize: compact ? 12 : 13,
           cursor: "pointer",
         }}
       >

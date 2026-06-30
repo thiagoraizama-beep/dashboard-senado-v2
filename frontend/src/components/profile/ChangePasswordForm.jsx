@@ -37,7 +37,10 @@ export default function ChangePasswordForm() {
 
   if (!open) {
     return (
-      <div className="card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div
+        className="card"
+        style={{ display: "flex", justifyContent: "space-between", alignItems: "center", height: "100%" }}
+      >
         <p className="card-title" style={{ margin: 0 }}>
           Senha
         </p>
@@ -62,7 +65,11 @@ export default function ChangePasswordForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="card" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+    <form
+      onSubmit={handleSubmit}
+      className="card"
+      style={{ display: "flex", flexDirection: "column", gap: 14, height: "100%" }}
+    >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <p className="card-title" style={{ margin: 0 }}>
           Alterar senha

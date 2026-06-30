@@ -27,8 +27,10 @@ function vtr(totals) {
   return totals.impressoes > 0 ? (totals.visualizacoes / totals.impressoes) * 100 : 0;
 }
 
+// Retorna null quando nao ha dado no periodo anterior para comparar (sem base
+// de comparacao), em vez de mascarar como "0%" que pareceria uma variacao real.
 function variacao(current, previous) {
-  return previous > 0 ? Number((((current - previous) / previous) * 100).toFixed(1)) : 0;
+  return previous > 0 ? Number((((current - previous) / previous) * 100).toFixed(1)) : null;
 }
 
 function filterRows(rows, campanha, veiculo, veiculosPorModelo) {

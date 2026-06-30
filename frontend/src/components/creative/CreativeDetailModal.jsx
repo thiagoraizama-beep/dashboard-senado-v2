@@ -38,7 +38,7 @@ export default function CreativeDetailModal({ creative, veiculo, filters, onClos
           </button>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, marginTop: 20 }}>
+        <div className="filter-grid-3" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, marginTop: 20 }}>
           <CreativeEvolutionChart veiculo={veiculo} adName={creative.adName || creative.nomeCriativo} filters={filters} />
 
           <div>

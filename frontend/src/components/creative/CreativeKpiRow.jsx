@@ -29,7 +29,7 @@ export default function CreativeKpiRow({ veiculo }) {
 
   if (!summary) {
     return (
-      <div className="grid" style={{ gridTemplateColumns: "repeat(7, 1fr)" }}>
+      <div className="grid kpi-grid-7" style={{ gridTemplateColumns: "repeat(7, 1fr)" }}>
         {Array.from({ length: 7 }).map((_, i) => (
           <div className="card" key={i}>
             <Spinner />
@@ -40,7 +40,7 @@ export default function CreativeKpiRow({ veiculo }) {
   }
 
   return (
-    <div className="grid" style={{ gridTemplateColumns: "repeat(7, 1fr)" }}>
+    <div className="grid kpi-grid-7" style={{ gridTemplateColumns: "repeat(7, 1fr)" }}>
       <KpiCard compact label="Investimento" value={`R$ ${summary.investimento.toLocaleString("pt-BR")}`} />
       <KpiCard compact label="Impressões" value={formatCompact(summary.impressoes)} />
       <KpiCard compact label="Alcance" value={formatCompact(summary.alcance)} />

@@ -37,8 +37,14 @@ body {
   }
 }
 
+html,
 body {
   margin: 0;
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+body {
   font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
   background: var(--bg);
   color: var(--text-primary);
@@ -125,6 +131,74 @@ select {
   .grid-main,
   .grid-bottom {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .app-shell {
+    padding: 16px;
+  }
+
+  .grid,
+  .grid-kpis,
+  .grid-main,
+  .grid-main-full,
+  .grid-bottom {
+    gap: 12px;
+  }
+
+  table {
+    white-space: nowrap;
+  }
+
+  .filter-grid-3 {
+    grid-template-columns: 1fr !important;
+  }
+
+  .kpi-grid-7 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .status-grid-4 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .status-grid-4 > *,
+  .kpi-grid-7 > *,
+  .grid > * {
+    min-width: 0;
+  }
+
+  .kpi-value,
+  .kpi-value-compact {
+    white-space: normal !important;
+    word-break: break-word;
+  }
+
+  .profile-grid-2 {
+    grid-template-columns: 1fr !important;
+  }
+
+  .matrix-item-card {
+    justify-content: center;
+    text-align: center;
+  }
+
+  .recharts-responsive-container {
+    max-width: 100% !important;
+  }
+
+  .footer-bi-text {
+    font-size: 12px !important;
+  }
+
+  .footer-calix-logo {
+    display: none !important;
+  }
+
+  footer {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
   }
 }
 

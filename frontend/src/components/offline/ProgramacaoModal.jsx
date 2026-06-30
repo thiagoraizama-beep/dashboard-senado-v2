@@ -1,6 +1,7 @@
 import { useState } from "react";
 import SearchSelect from "./SearchSelect.jsx";
 import { createProgramacao, updateProgramacao } from "../../api/client.js";
+import useIsMobile from "../../hooks/useIsMobile.js";
 
 function toISODate(date) {
   return date.toISOString().slice(0, 10);
@@ -15,6 +16,7 @@ export default function ProgramacaoModal({ initialDate, editingProgramacao, veic
   const [horaFim, setHoraFim] = useState(editingProgramacao?.horaFim || "12:00");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const isMobile = useIsMobile();
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -45,9 +47,9 @@ export default function ProgramacaoModal({ initialDate, editingProgramacao, veic
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(20,33,61,0.45)",
+        background: isMobile ? "rgba(10,14,25,0.5)" : "rgba(20,33,61,0.45)",
         display: "flex",
-        alignItems: "center",
+        alignItems: isMobile ? "flex-end" : "center",
         justifyContent: "center",
         zIndex: 100,
       }}
@@ -56,7 +58,20 @@ export default function ProgramacaoModal({ initialDate, editingProgramacao, veic
         onClick={(e) => e.stopPropagation()}
         onSubmit={handleSubmit}
         className="card"
-        style={{ width: 380, display: "flex", flexDirection: "column", gap: 14 }}
+        style={
+          isMobile
+            ? {
+                width: "100%",
+                maxHeight: "85vh",
+                overflowY: "auto",
+                borderBottomLeftRadius: 0,
+                borderBottomRightRadius: 0,
+                display: "flex",
+                flexDirection: "column",
+                gap: 14,
+              }
+            : { width: 380, display: "flex", flexDirection: "column", gap: 14 }
+        }
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <strong style={{ fontSize: 16 }}>{isEditing ? "Editar programação" : "Nova programação"}</strong>

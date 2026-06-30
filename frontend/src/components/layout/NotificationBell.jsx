@@ -15,11 +15,12 @@ function useClickOutside(ref, onOutside) {
   }, [ref, onOutside]);
 }
 
-export default function NotificationBell() {
+export default function NotificationBell({ variant = "onImage" }) {
   const [programacoesHoje, setProgramacoesHoje] = useState([]);
   const [hovering, setHovering] = useState(false);
   const [pinned, setPinned] = useState(false);
   const ref = useRef(null);
+  const onImage = variant === "onImage";
 
   const open = pinned || hovering;
 
@@ -48,9 +49,9 @@ export default function NotificationBell() {
           width: 36,
           height: 36,
           borderRadius: "50%",
-          border: "1px solid rgba(255,255,255,0.4)",
-          background: "rgba(255,255,255,0.08)",
-          color: "#fff",
+          border: onImage ? "1px solid rgba(255,255,255,0.4)" : "1px solid var(--border)",
+          background: onImage ? "rgba(255,255,255,0.08)" : "var(--card-bg)",
+          color: onImage ? "#fff" : "var(--text-primary)",
           cursor: "pointer",
           position: "relative",
         }}

@@ -10,6 +10,7 @@ import {
 import { CREATIVE_VEHICLES } from "./creativeVehicles.js";
 import { useAuth } from "../../context/AuthContext.jsx";
 import Avatar from "../common/Avatar.jsx";
+import useIsMobile from "../../hooks/useIsMobile.js";
 
 export const PAGES = {
   DASHBOARD: "Dashboard",
@@ -30,30 +31,52 @@ const STORAGE_KEY = "sidebar-collapsed";
 export const SIDEBAR_WIDTH_EXPANDED = 260;
 export const SIDEBAR_WIDTH_COLLAPSED = 72;
 
-export default function Sidebar({ collapsed, onToggle, activePage, onNavigate, user }) {
+export default function Sidebar({ collapsed: collapsedProp, onToggle, activePage, onNavigate, user, mobileOpen, onCloseMobile }) {
   const { logout } = useAuth();
   const [creativeMenuOpen, setCreativeMenuOpen] = useState(false);
   const creativeActive = CREATIVE_VEHICLES.includes(activePage);
   const matrixActive = activePage === PAGES.MATRIZ_CONTEUDO;
   const matrixLabel = user?.papel === "cliente" ? "Relatório de Criativos" : PAGES.MATRIZ_CONTEUDO;
+  const isMobile = useIsMobile();
+  // No mobile a sidebar sempre se comporta como expandida (largura total em drawer),
+  // independente do estado de colapso salvo do desktop.
+  const collapsed = isMobile ? false : collapsedProp;
+
+  function handleNavigate(page) {
+    onNavigate(page);
+    if (isMobile) onCloseMobile?.();
+  }
 
   return (
-    <aside
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        height: "100vh",
-        width: collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED,
-        background: "var(--card-bg)",
-        boxShadow: "1px 0 3px rgba(20,33,61,0.06)",
-        display: "flex",
-        flexDirection: "column",
-        transition: "width 0.2s ease",
-        zIndex: 10,
-        overflow: "hidden",
-      }}
-    >
+    <>
+      {isMobile && mobileOpen && (
+        <div
+          onClick={onCloseMobile}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(10,14,25,0.5)",
+            zIndex: 19,
+          }}
+        />
+      )}
+      <aside
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          height: "100vh",
+          width: isMobile ? SIDEBAR_WIDTH_EXPANDED : collapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED,
+          background: "var(--card-bg)",
+          boxShadow: "1px 0 3px rgba(20,33,61,0.06)",
+          display: "flex",
+          flexDirection: "column",
+          transition: isMobile ? "transform 0.2s ease" : "width 0.2s ease",
+          transform: isMobile && !mobileOpen ? "translateX(-100%)" : "translateX(0)",
+          zIndex: 20,
+          overflow: "hidden",
+        }}
+      >
       <div
         style={{
           display: "flex",
@@ -73,6 +96,28 @@ export default function Sidebar({ collapsed, onToggle, activePage, onNavigate, u
             borderRadius: collapsed ? 6 : 0,
           }}
         />
+        {isMobile && (
+          <button
+            onClick={onCloseMobile}
+            aria-label="Fechar menu"
+            style={{
+              marginLeft: "auto",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 32,
+              height: 32,
+              borderRadius: 8,
+              border: "1px solid var(--border)",
+              background: "transparent",
+              color: "var(--text-secondary)",
+              cursor: "pointer",
+              fontSize: 18,
+            }}
+          >
+            ×
+          </button>
+        )}
       </div>
 
       <nav style={{ display: "flex", flexDirection: "column", gap: 4, padding: "20px 12px 12px", flex: 1, overflowY: "auto" }}>
@@ -83,7 +128,7 @@ export default function Sidebar({ collapsed, onToggle, activePage, onNavigate, u
             <div
               key={item.label}
               title={collapsed ? item.label : undefined}
-              onClick={() => onNavigate(item.label)}
+              onClick={() => handleNavigate(item.label)}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -137,7 +182,7 @@ export default function Sidebar({ collapsed, onToggle, activePage, onNavigate, u
               return (
                 <div
                   key={veiculo}
-                  onClick={() => onNavigate(veiculo)}
+                  onClick={() => handleNavigate(veiculo)}
                   style={{
                     padding: "8px 12px",
                     borderRadius: 8,
@@ -157,7 +202,7 @@ export default function Sidebar({ collapsed, onToggle, activePage, onNavigate, u
 
         <div
           title={collapsed ? matrixLabel : undefined}
-          onClick={() => onNavigate(PAGES.MATRIZ_CONTEUDO)}
+          onClick={() => handleNavigate(PAGES.MATRIZ_CONTEUDO)}
           style={{
             display: "flex",
             alignItems: "center",
@@ -188,7 +233,7 @@ export default function Sidebar({ collapsed, onToggle, activePage, onNavigate, u
           }}
         >
           <div
-            onClick={() => onNavigate(PAGES.PERFIL)}
+            onClick={() => handleNavigate(PAGES.PERFIL)}
             title={collapsed ? "Perfil" : undefined}
             style={{ display: "flex", alignItems: "center", gap: 10, overflow: "hidden", cursor: "pointer" }}
           >
@@ -227,26 +272,29 @@ export default function Sidebar({ collapsed, onToggle, activePage, onNavigate, u
         </div>
       )}
 
-      <button
-        onClick={onToggle}
-        aria-label={collapsed ? "Expandir menu" : "Encolher menu"}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 8,
-          margin: 12,
-          padding: "10px",
-          borderRadius: 10,
-          border: "1px solid var(--border)",
-          background: "transparent",
-          color: "var(--text-secondary)",
-          cursor: "pointer",
-        }}
-      >
-        <ChevronIcon collapsed={collapsed} />
-      </button>
-    </aside>
+      {!isMobile && (
+        <button
+          onClick={onToggle}
+          aria-label={collapsed ? "Expandir menu" : "Encolher menu"}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+            margin: 12,
+            padding: "10px",
+            borderRadius: 10,
+            border: "1px solid var(--border)",
+            background: "transparent",
+            color: "var(--text-secondary)",
+            cursor: "pointer",
+          }}
+        >
+          <ChevronIcon collapsed={collapsed} />
+        </button>
+      )}
+      </aside>
+    </>
   );
 }
 

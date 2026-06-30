@@ -2,7 +2,10 @@ import MultiSelectDropdown from "../layout/MultiSelectDropdown.jsx";
 
 export default function MatrixFilterBar({ options, filters, setStatus, setVeiculo, setCampanha }) {
   return (
-    <div className="card" style={{ marginBottom: 16, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+    <div
+      className="card filter-grid-3"
+      style={{ marginBottom: 16, display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}
+    >
       <div>
         <label style={{ fontSize: 12, color: "var(--text-secondary)" }}>Status</label>
         <MultiSelectDropdown

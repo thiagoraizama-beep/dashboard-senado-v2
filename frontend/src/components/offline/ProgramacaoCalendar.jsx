@@ -4,6 +4,7 @@ import { useAuth } from "../../context/AuthContext.jsx";
 import ProgramacaoModal from "./ProgramacaoModal.jsx";
 import ProgramacoesListModal from "./ProgramacoesListModal.jsx";
 import Spinner from "../common/Spinner.jsx";
+import useIsMobile from "../../hooks/useIsMobile.js";
 
 function toISODate(date) {
   return date.toISOString().slice(0, 10);
@@ -44,6 +45,7 @@ export default function ProgramacaoCalendar() {
   const [modalDate, setModalDate] = useState(null);
   const [editingProgramacao, setEditingProgramacao] = useState(null);
   const [listOpen, setListOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   const grid = useMemo(() => buildCalendarGrid(monthDate), [monthDate]);
   const monthLabel = monthDate.toLocaleDateString("pt-BR", { month: "long", year: "numeric" });
@@ -102,7 +104,7 @@ export default function ProgramacaoCalendar() {
 
   return (
     <div className="card">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
         <div>
           <p className="card-title" style={{ margin: 0 }}>
             Programação de Televisão
@@ -138,10 +140,10 @@ export default function ProgramacaoCalendar() {
       {!programacoes ? (
         <Spinner />
       ) : (
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: isMobile ? 3 : 6 }}>
         {WEEKDAYS.map((w) => (
-          <div key={w} style={{ fontSize: 11, color: "var(--text-secondary)", textAlign: "center", fontWeight: 600 }}>
-            {w}
+          <div key={w} style={{ fontSize: isMobile ? 9 : 11, color: "var(--text-secondary)", textAlign: "center", fontWeight: 600 }}>
+            {isMobile ? w.slice(0, 1).toUpperCase() : w}
           </div>
         ))}
 
@@ -152,43 +154,59 @@ export default function ProgramacaoCalendar() {
             <div
               key={i}
               style={{
-                minHeight: 84,
+                minHeight: isMobile ? 40 : 84,
                 borderRadius: 8,
                 border: isToday ? "1px solid var(--accent)" : "1px solid var(--border)",
-                padding: 6,
+                padding: isMobile ? 3 : 6,
                 background: date ? "var(--card-bg)" : "transparent",
               }}
             >
               {date && (
                 <>
-                  <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{date.getDate()}</span>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 4 }}>
-                    {items.slice(0, 3).map((p) => (
-                      <div
-                        key={p.id}
-                        title={`${p.veiculo} - ${p.programa} (${p.horaInicio} às ${p.horaFim})`}
-                        style={{
-                          background: "var(--accent-soft)",
-                          color: "var(--accent)",
-                          borderRadius: 6,
-                          padding: "3px 6px",
-                          fontSize: 10,
-                          fontWeight: 600,
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {p.veiculo} · {p.programa}
-                        <div style={{ fontWeight: 400, opacity: 0.85 }}>
-                          {p.horaInicio} às {p.horaFim}
-                        </div>
+                  <span style={{ fontSize: isMobile ? 10 : 11, color: "var(--text-secondary)" }}>{date.getDate()}</span>
+                  {isMobile ? (
+                    items.length > 0 && (
+                      <div style={{ display: "flex", justifyContent: "center", marginTop: 4 }}>
+                        <span
+                          style={{
+                            width: 6,
+                            height: 6,
+                            borderRadius: "50%",
+                            background: "var(--accent)",
+                            display: "inline-block",
+                          }}
+                        />
                       </div>
-                    ))}
-                    {items.length > 3 && (
-                      <span style={{ fontSize: 10, color: "var(--text-secondary)" }}>+{items.length - 3} mais</span>
-                    )}
-                  </div>
+                    )
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 4 }}>
+                      {items.slice(0, 3).map((p) => (
+                        <div
+                          key={p.id}
+                          title={`${p.veiculo} - ${p.programa} (${p.horaInicio} às ${p.horaFim})`}
+                          style={{
+                            background: "var(--accent-soft)",
+                            color: "var(--accent)",
+                            borderRadius: 6,
+                            padding: "3px 6px",
+                            fontSize: 10,
+                            fontWeight: 600,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {p.veiculo} · {p.programa}
+                          <div style={{ fontWeight: 400, opacity: 0.85 }}>
+                            {p.horaInicio} às {p.horaFim}
+                          </div>
+                        </div>
+                      ))}
+                      {items.length > 3 && (
+                        <span style={{ fontSize: 10, color: "var(--text-secondary)" }}>+{items.length - 3} mais</span>
+                      )}
+                    </div>
+                  )}
                 </>
               )}
             </div>

@@ -3,6 +3,7 @@ import { getCreatives } from "../../api/client.js";
 import { useCreativeFilters } from "../../context/CreativeAnalysisContext.jsx";
 import Spinner from "../common/Spinner.jsx";
 import CreativeDetailModal from "./CreativeDetailModal.jsx";
+import useIsMobile from "../../hooks/useIsMobile.js";
 
 function formatCompact(value) {
   if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
@@ -19,10 +20,112 @@ function EyeIcon() {
   );
 }
 
+function ChevronIcon({ open }) {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      style={{ transform: open ? "rotate(0deg)" : "rotate(-90deg)", transition: "transform 0.15s" }}
+    >
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  );
+}
+
+function MetricRow({ label, value }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
+      <span style={{ color: "var(--text-secondary)" }}>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
+function CreativeMobileCard({ creative: c, veiculo, onViewDetail }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div style={{ border: "1px solid var(--border)", borderRadius: 10 }}>
+      <div
+        onClick={() => setOpen((o) => !o)}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          padding: "10px 12px",
+          cursor: "pointer",
+        }}
+      >
+        <ChevronIcon open={open} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <strong style={{ fontSize: 13, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {c.nomeCriativo}
+          </strong>
+          {veiculo === "Meta" && c.plataforma && (
+            <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{c.plataforma}</span>
+          )}
+        </div>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onViewDetail(c);
+          }}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 32,
+            height: 32,
+            borderRadius: 8,
+            border: "1px solid var(--border)",
+            background: "transparent",
+            color: "var(--accent)",
+            cursor: "pointer",
+            flexShrink: 0,
+          }}
+        >
+          <EyeIcon />
+        </button>
+      </div>
+      {open && (
+        <div
+          style={{
+            borderTop: "1px solid var(--border)",
+            padding: "10px 12px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 6,
+            background: "var(--bg)",
+          }}
+        >
+          <MetricRow label="Investimento" value={`R$ ${c.investimento.toLocaleString("pt-BR")}`} />
+          <MetricRow label="Impressões" value={formatCompact(c.impressoes)} />
+          <MetricRow label="Cliques" value={formatCompact(c.cliques)} />
+          <MetricRow label="CTR" value={`${c.ctr}%`} />
+          <MetricRow label="VTR" value={`${c.vtr}%`} />
+          <MetricRow label="Visualizações" value={formatCompact(c.videoViews)} />
+          <MetricRow label="Visu. 25%" value={formatCompact(c.videoViews25)} />
+          <MetricRow label="Visu. 50%" value={formatCompact(c.videoViews50)} />
+          <MetricRow label="Visu. 75%" value={formatCompact(c.videoViews75)} />
+          <MetricRow label="Visu. 100%" value={formatCompact(c.videoCompletions)} />
+          <MetricRow label="Engajamentos" value={formatCompact(c.engajamentos)} />
+          <MetricRow label="Tipo Compra" value={c.tipoCompra || "-"} />
+          <MetricRow label="Formato" value={c.posicionamento || "-"} />
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function CreativesTable({ veiculo }) {
   const { filters } = useCreativeFilters(veiculo);
   const [creatives, setCreatives] = useState(null);
   const [selected, setSelected] = useState(null);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     setCreatives(null);
@@ -42,6 +145,12 @@ export default function CreativesTable({ veiculo }) {
       <p className="card-title">Criativos</p>
       {!creatives ? (
         <Spinner />
+      ) : isMobile ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {creatives.map((c) => (
+            <CreativeMobileCard key={c.adName} creative={c} veiculo={veiculo} onViewDetail={setSelected} />
+          ))}
+        </div>
       ) : (
         <div style={{ overflowX: "auto" }}>
           <table style={{ whiteSpace: "nowrap" }}>

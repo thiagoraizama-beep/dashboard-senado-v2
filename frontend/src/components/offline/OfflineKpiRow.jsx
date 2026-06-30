@@ -21,7 +21,7 @@ export default function OfflineKpiRow() {
 
   if (!summary) {
     return (
-      <div className="grid" style={{ gridTemplateColumns: "repeat(4, 1fr)", marginTop: 20 }}>
+      <div className="grid status-grid-4" style={{ gridTemplateColumns: "repeat(4, 1fr)", marginTop: 20 }}>
         <div className="card">
           <Spinner />
         </div>
@@ -39,7 +39,7 @@ export default function OfflineKpiRow() {
   }
 
   return (
-    <div className="grid" style={{ gridTemplateColumns: "repeat(4, 1fr)", marginTop: 20 }}>
+    <div className="grid status-grid-4" style={{ gridTemplateColumns: "repeat(4, 1fr)", marginTop: 20 }}>
       <KpiCard label="Categorias" value={summary.categorias} />
       <KpiCard label="Veículos" value={summary.veiculos} />
       <KpiCard label="Investimento Total" value={`R$ ${summary.investimento.toLocaleString("pt-BR")}`} />

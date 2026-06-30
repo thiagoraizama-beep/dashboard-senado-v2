@@ -54,7 +54,7 @@ export default function ProfilePage() {
         <ThemeToggle variant="plain" />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "start" }}>
+      <div className="profile-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, alignItems: "stretch" }}>
         <form onSubmit={handleSubmit} className="card" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
             <Avatar nome={nome} fotoUrl={removerFoto ? null : preview || user.fotoUrl} size={64} />
@@ -136,7 +136,10 @@ export default function ProfilePage() {
       </div>
 
       {user.papel === "agencia" && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginTop: 20, alignItems: "start" }}>
+        <div
+          className="profile-grid-2"
+          style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginTop: 20, alignItems: "start" }}
+        >
           <VehicleManagement />
           <UserManagement />
         </div>

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { deleteProgramacao } from "../../api/client.js";
+import useIsMobile from "../../hooks/useIsMobile.js";
 
 function formatDateBR(iso) {
   const [year, month, day] = iso.split("-");
@@ -8,6 +9,7 @@ function formatDateBR(iso) {
 
 export default function ProgramacoesListModal({ programacoes, onClose, onChanged, onEdit }) {
   const [deletingId, setDeletingId] = useState(null);
+  const isMobile = useIsMobile();
 
   async function handleDelete(id) {
     setDeletingId(id);
@@ -29,9 +31,9 @@ export default function ProgramacoesListModal({ programacoes, onClose, onChanged
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(20,33,61,0.45)",
+        background: isMobile ? "rgba(10,14,25,0.5)" : "rgba(20,33,61,0.45)",
         display: "flex",
-        alignItems: "center",
+        alignItems: isMobile ? "flex-end" : "center",
         justifyContent: "center",
         zIndex: 100,
       }}
@@ -39,7 +41,20 @@ export default function ProgramacoesListModal({ programacoes, onClose, onChanged
       <div
         onClick={(e) => e.stopPropagation()}
         className="card"
-        style={{ width: 480, maxHeight: "70vh", display: "flex", flexDirection: "column", gap: 12 }}
+        style={
+          isMobile
+            ? {
+                width: "100%",
+                maxHeight: "85vh",
+                overflowY: "auto",
+                borderBottomLeftRadius: 0,
+                borderBottomRightRadius: 0,
+                display: "flex",
+                flexDirection: "column",
+                gap: 12,
+              }
+            : { width: 480, maxHeight: "70vh", display: "flex", flexDirection: "column", gap: 12 }
+        }
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <strong style={{ fontSize: 16 }}>Programações cadastradas ({sorted.length})</strong>

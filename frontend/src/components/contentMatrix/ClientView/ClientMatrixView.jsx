@@ -4,9 +4,11 @@ import StatusBadge from "../statusBadge.jsx";
 import DownloadButton from "../DownloadButton.jsx";
 import CreativePreviewPopup from "../CreativePreviewPopup.jsx";
 import MatrixFilterBar from "../MatrixFilterBar.jsx";
+import MatrixMobileHeader from "../MatrixMobileHeader.jsx";
 import { useMatrixFilters } from "../useMatrixFilters.js";
 import ThemeToggle from "../../layout/ThemeToggle.jsx";
 import Spinner from "../../common/Spinner.jsx";
+import useIsMobile from "../../../hooks/useIsMobile.js";
 
 function formatPeriodo(inicio, fim) {
   if (!inicio && !fim) return "-";
@@ -27,9 +29,47 @@ function groupByStatus(creatives) {
   return groups;
 }
 
+function CreativeMobileCard({ c }) {
+  return (
+    <div style={{ border: "1px solid var(--border)", borderRadius: 10, padding: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <CreativePreviewPopup creative={c}>
+          {c.tipo_midia === "video" ? (
+            <video src={c.cloudinary_url} style={{ width: 44, height: 44, borderRadius: 8, objectFit: "cover" }} />
+          ) : (
+            <img src={c.cloudinary_url} alt={c.nome} style={{ width: 44, height: 44, borderRadius: 8, objectFit: "cover" }} />
+          )}
+        </CreativePreviewPopup>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <strong style={{ fontSize: 13, display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {c.nome}
+          </strong>
+          <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>
+            {c.campanha} · {c.veiculo}
+          </span>
+        </div>
+        <StatusBadge status={c.status} />
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 12 }}>
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <span style={{ color: "var(--text-secondary)" }}>Período</span>
+          <strong>{formatPeriodo(c.periodo_inicio, c.periodo_fim)}</strong>
+        </div>
+        {c.descricao && (
+          <span style={{ color: "var(--text-secondary)" }}>{c.descricao}</span>
+        )}
+      </div>
+
+      <DownloadButton creative={c} compact />
+    </div>
+  );
+}
+
 export default function ClientMatrixView() {
   const [creatives, setCreatives] = useState(null);
   const { filtered, options, filters, setStatus, setVeiculo, setCampanha } = useMatrixFilters(creatives);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     getMatrixCreatives().then(setCreatives).catch(console.error);
@@ -39,6 +79,38 @@ export default function ClientMatrixView() {
 
   const counts = groupByStatus(creatives);
 
+  if (isMobile) {
+    return (
+      <div>
+        <MatrixMobileHeader options={options} filters={filters} setStatus={setStatus} setVeiculo={setVeiculo} setCampanha={setCampanha} />
+
+        <h2 style={{ margin: "16px 0" }}>Relatório de Criativos</h2>
+
+        <div className="grid status-grid-4" style={{ gridTemplateColumns: "repeat(4, 1fr)", marginBottom: 20 }}>
+          {Object.entries(counts).map(([status, count]) => (
+            <div className="card" key={status}>
+              <p className="card-title">{status}</p>
+              <p className="kpi-value">{count}</p>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {filtered.map((c) => (
+            <CreativeMobileCard key={c.id} c={c} />
+          ))}
+          {filtered.length === 0 && (
+            <div className="card" style={{ textAlign: "center", color: "var(--text-secondary)" }}>
+              {creatives.length === 0
+                ? "Nenhum criativo cadastrado ainda"
+                : "Nenhum criativo encontrado para os filtros selecionados"}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
@@ -46,7 +118,7 @@ export default function ClientMatrixView() {
         <ThemeToggle variant="plain" />
       </div>
 
-      <div className="grid" style={{ gridTemplateColumns: "repeat(4, 1fr)", marginBottom: 20 }}>
+      <div className="grid status-grid-4" style={{ gridTemplateColumns: "repeat(4, 1fr)", marginBottom: 20 }}>
         {Object.entries(counts).map(([status, count]) => (
           <div className="card" key={status}>
             <p className="card-title">{status}</p>
@@ -65,7 +137,7 @@ export default function ClientMatrixView() {
         />
       )}
 
-      <div className="card">
+      <div className="card" style={{ overflowX: "auto" }}>
         <table>
           <thead>
             <tr>
