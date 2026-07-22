@@ -40,15 +40,6 @@ router.get("/statuses", (req, res) => {
   res.json(req.user.papel === "veiculo" ? STATUSES_VEICULO : STATUSES);
 });
 
-router.post("/fix-adnames", async (req, res, next) => {
-  try {
-    const { query: dbQuery } = await import("../config/database.js");
-    await dbQuery(`UPDATE creatives SET ad_name = TRIM(REGEXP_REPLACE(ad_name, '[\\s]+', ' ', 'g')) WHERE ad_name ~ '[\\s]{2,}|[\\n\\r\\t]'`);
-    const { rows } = await dbQuery("SELECT id, nome, ad_name FROM creatives");
-    res.json(rows);
-  } catch (err) { next(err); }
-});
-
 router.get("/debug-adname", async (req, res, next) => {
   try {
     const { query: dbQuery } = await import("../config/database.js");
