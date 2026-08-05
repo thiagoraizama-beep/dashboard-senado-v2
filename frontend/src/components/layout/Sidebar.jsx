@@ -6,6 +6,7 @@ import {
   TransactionIcon,
   LogoutIcon,
   ChevronIcon,
+  RecallIcon,
 } from "./navIcons.jsx";
 import { CREATIVE_VEHICLES } from "./creativeVehicles.js";
 import { useAuth } from "../../context/AuthContext.jsx";
@@ -16,6 +17,7 @@ export const PAGES = {
   DASHBOARD: "Dashboard",
   MIDIA_OFFLINE: "Mídia Offline",
   MATRIZ_CONTEUDO: "Matriz de Conteúdo",
+  RECALL_CAMPANHA: "Recall de Campanha",
   PERFIL: "Perfil",
 };
 
@@ -243,6 +245,29 @@ export default function Sidebar({ collapsed: collapsedProp, onToggle, activePage
           <TransactionIcon />
           {!collapsed && <span>{matrixLabel}</span>}
         </div>
+
+        {(user?.papel === "cliente" || user?.papel === "agencia") && (
+          <div
+            title={collapsed ? PAGES.RECALL_CAMPANHA : undefined}
+            onClick={() => handleNavigate(PAGES.RECALL_CAMPANHA)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: collapsed ? "center" : "flex-start",
+              gap: 12,
+              padding: "10px 12px",
+              borderRadius: 10,
+              cursor: "pointer",
+              color: activePage === PAGES.RECALL_CAMPANHA ? "var(--accent)" : "var(--text-secondary)",
+              background: activePage === PAGES.RECALL_CAMPANHA ? "var(--accent-soft)" : "transparent",
+              fontWeight: activePage === PAGES.RECALL_CAMPANHA ? 600 : 400,
+              whiteSpace: "nowrap",
+            }}
+          >
+            <RecallIcon />
+            {!collapsed && <span>{PAGES.RECALL_CAMPANHA}</span>}
+          </div>
+        )}
 
         <div
           title={collapsed ? "Configurações" : undefined}

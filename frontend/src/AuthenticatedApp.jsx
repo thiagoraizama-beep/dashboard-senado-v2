@@ -17,6 +17,7 @@ import MediaOnlineDashboard from "./pages/MediaOnlineDashboard.jsx";
 import OfflineMediaDashboard from "./pages/OfflineMediaDashboard.jsx";
 import CreativeAnalysisPage from "./pages/CreativeAnalysisPage.jsx";
 import ContentMatrixPage from "./pages/ContentMatrixPage.jsx";
+import RecallCampanhaPage from "./pages/RecallCampanhaPage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
 import PageLoader from "./components/common/PageLoader.jsx";
 import Footer from "./components/layout/Footer.jsx";
@@ -90,6 +91,7 @@ export default function AuthenticatedApp() {
                   )}
                   {CREATIVE_VEHICLES.includes(activePage) && <CreativeAnalysisPage veiculo={activePage} />}
                   {activePage === PAGES.MATRIZ_CONTEUDO && <ContentMatrixPage />}
+                  {activePage === PAGES.RECALL_CAMPANHA && <RecallCampanhaPage />}
                   {activePage === PAGES.PERFIL && <ProfilePage />}
                 </div>
                 <div style={{ padding: "0 24px 24px" }}>
